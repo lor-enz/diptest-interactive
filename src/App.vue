@@ -16,12 +16,13 @@ export default {
       count: 0,
       canvas: null,
       points: [],
-      myData: [],
+      dataForHistogram: [],
       chartData: [
         { x: "Draw", y: 100 },
         { x: "something", y: 50 },
         { x: "above", y: 25 },
       ],
+      cumuData: [],
     };
   },
 
@@ -75,24 +76,30 @@ export default {
     },
     convert() {
       console.log("convert()");
+      // Change from canvas pixel coordinates (that are top to bottom) to something coordinate data like
       const map = Array.prototype.map;
       var points = map.call(this.points, (element) => {
         let [x, y] = element;
         return [x / 20 + 1, y];
       });
-      var myData = [];
-      points.forEach(function ([x, y], index) {
-        for (var i = 0; i < y; i++) {
-          myData.push(x);
-        }
-      });
-      this.myData = myData;
-      // Do more stuff
+      // Chart data
       var chartData = [];
       points.forEach(function ([x1, y1], index) {
         chartData.push({ x: x1, y: y1 });
       });
       this.chartData = chartData;
+      // Actual CDF (cumulative distribution funciton)
+      var cumuData = [];
+      var totalsum = 0;
+      points.forEach(function ([x1, y1], index) {
+          totalsum = totalsum + y1
+      });
+      var sum = 0;
+      points.forEach(function ([x1, y1], index) {
+        sum = sum + y1
+        cumuData.push({ x: x1, y: sum / totalsum });
+      });
+      this.cumuData = cumuData;
     },
     copy() {
       this.$refs.myinput.focus();
@@ -134,14 +141,23 @@ export default {
             template> Chart> div>
           </template></Chart
         >
+        <Chart :data="cumuData" :margin="margin" :direction="direction">
+          <template #layers>
+            <Bar :dataKeys="['x', 'y']" :barStyle="{ fill: '#586d2a' }" />
+
+            template> Chart> div>
+          </template></Chart
+        >
       </div>
     </div>
+    <br />
+    
     <br />
     <input
       v-on:focus="$event.target.select()"
       ref="myinput"
       readonly
-      :value="myData"
+      :value="dataForHistogram"
     />
     <button @click="copy">Copy</button>
   </div>
