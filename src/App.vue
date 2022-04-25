@@ -2,6 +2,11 @@
 import { Chart, Bar } from "vue3-charts";
 
 const startAreaSize = 7;
+const zeroAreaSize = 10;
+function randomIntFromInterval(min, max) { // min and max included 
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
 export default {
   name: "DipTestApp",
   components: {
@@ -16,13 +21,21 @@ export default {
       count: 0,
       canvas: null,
       points: [],
-      dataForHistogram: [],
-      chartData: [
-        { x: "Draw", y: 100 },
-        { x: "something", y: 50 },
-        { x: "above", y: 25 },
+      copyPasteData: [],
+      chartDataHistogram: [
+        { x: "Draw", y: 400 },
+        { x: "something", y: 200 },
+        { x: "in", y: 100 },
+        { x: "the ", y: 50 },
+        { x: "canvas", y: 25 },
       ],
-      cumuData: [],
+      chartDataCumulative: [
+        { x: "Draw", y: 25 },
+        { x: "something", y: 50 },
+        { x: "in", y: 100 },
+        { x: "the ", y: 200 },
+        { x: "canvas", y: 400 },
+      ],
     };
   },
 
@@ -44,13 +57,14 @@ export default {
       if (e.offsetX < startAreaSize) {
         this.clear();
       }
-
+      
       if (e.offsetX >= this.x) {
         var newX = Math.round(e.offsetX / 20) * 20;
-        this.drawLine(this.x, this.y, newX, e.offsetY);
+        var newY = (e.offsetY >= this.canv.height - zeroAreaSize) ? randomIntFromInterval(this.canv.height-5,this.canv.height) : e.offsetY
+        this.drawLine(this.x, this.y, newX, newY);
         this.x = newX;
-        this.y = e.offsetY;
-        this.maybeAddPoint(newX, e.offsetY);
+        this.y = newY;
+        this.maybeAddPoint(newX, newY);
       }
     },
     clear() {
@@ -58,9 +72,12 @@ export default {
       this.canvas.clearRect(0, 0, canv.width, canv.height);
       this.x = 0;
       this.points = [];
-      // grey marked area
-      this.canvas.fillStyle = "#ffe291";
+      // yellow marked area
+      this.canvas.fillStyle = "#d1c30050";
       this.canvas.fillRect(0, 0, startAreaSize, this.canv.height);
+      // red marked area
+      this.canvas.fillStyle = "#d1000050";
+      this.canvas.fillRect(0, this.canv.height-zeroAreaSize, this.canv.width, zeroAreaSize);
     },
     maybeAddPoint(newX, newY) {
       var c = document.getElementById("myCanvas");
@@ -83,13 +100,13 @@ export default {
         return [x / 20 + 1, y];
       });
       // Chart data
-      var chartData = [];
+      var chartDataHistogram = [];
       points.forEach(function ([x1, y1], index) {
-        chartData.push({ x: x1, y: y1 });
+        chartDataHistogram.push({ x: x1, y: y1 });
       });
-      this.chartData = chartData;
+      this.chartDataHistogram = chartDataHistogram;
       // Actual CDF (cumulative distribution funciton)
-      var cumuData = [];
+      var chartDataCumulative = [];
       var totalsum = 0;
       points.forEach(function ([x1, y1], index) {
           totalsum = totalsum + y1
@@ -97,9 +114,15 @@ export default {
       var sum = 0;
       points.forEach(function ([x1, y1], index) {
         sum = sum + y1
-        cumuData.push({ x: x1, y: sum / totalsum });
+        chartDataCumulative.push({ x: x1, y: sum / totalsum });
       });
-      this.cumuData = cumuData;
+      this.chartDataCumulative = chartDataCumulative;
+      // copyPasteData
+      var copyPasteData = []
+      chartDataCumulative.forEach(function (dict, index) {
+        copyPasteData.push(dict['y']*100);
+      });
+      this.copyPasteData = copyPasteData
     },
     copy() {
       this.$refs.myinput.focus();
@@ -121,9 +144,24 @@ export default {
 <template>
   <div>
     <h1>Line to Histogram</h1>
-    <h2>Canvas</h2>
+    
+    <div>
+    
+    <p>
+      
+    </p>
+  </div>
     <div class="row">
       <div class="column">
+        <h2>How to</h2>
+        <p>
+          The large white box below is the canvas. <br> 
+          Move your Mouse cursor from the yellow start area on the left to the right end of the canvas. <br>
+          No need to click! <br> Your mouse will leave a trail, you don't need to click any mouse button while
+          doing so! Once the mourse cursor leaves the canvas the line you drew will
+          be converted into data for the charts on the right.
+        </p>
+        <h2>Canvas</h2>
         <canvas
           id="myCanvas"
           width="800"
@@ -132,16 +170,23 @@ export default {
           @mousedown="keepDrawing"
           @mouseleave="convert"
         />
+        <input
+          v-on:focus="$event.target.select()"
+          ref="myinput"
+          readonly
+          :value="copyPasteData"
+        />
+        <button @click="copy">Copy</button>
       </div>
       <div class="column">
-        <Chart :data="chartData" :margin="margin" :direction="direction">
+        <Chart :data="chartDataHistogram" :margin="margin" :direction="direction">
           <template #layers>
             <Bar :dataKeys="['x', 'y']" :barStyle="{ fill: '#586d2a' }" />
 
             template> Chart> div>
           </template></Chart
         >
-        <Chart :data="cumuData" :margin="margin" :direction="direction">
+        <Chart :data="chartDataCumulative" :margin="margin" :direction="direction">
           <template #layers>
             <Bar :dataKeys="['x', 'y']" :barStyle="{ fill: '#586d2a' }" />
 
@@ -153,27 +198,9 @@ export default {
     <br />
     
     <br />
-    <input
-      v-on:focus="$event.target.select()"
-      ref="myinput"
-      readonly
-      :value="dataForHistogram"
-    />
-    <button @click="copy">Copy</button>
+    
   </div>
-  <div>
-    <h2>How to</h2>
-    <p>
-      The large white box on the left is the canvas. Move your Mouse cursor from
-      the yellow start area on the left to the right end of the canvas. Your
-      mouse will leave a trail, you don't need to click any mouse button while
-      doing so! Once the mourse cursor leaves the canvas the line you drew will
-      be converted into a bar chart, visible below.
-    </p>
-    <p>
-      {{ chartData }}
-    </p>
-  </div>
+  
 </template>
 
 <style scoped>
@@ -199,7 +226,8 @@ div {
 
 p {
   font-family: verdana;
-  font-size: 20px;
+  font-size: 15px;
+  text-align: left;
 }
 
 .row {
