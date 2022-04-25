@@ -1,3 +1,5 @@
+# Source: https://v2.vuejs.org/v2/cookbook/dockerize-vuejs-app.html
+
 # Choose the Image which has Node installed already
 FROM node:lts-alpine
 
