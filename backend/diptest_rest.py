@@ -4,18 +4,24 @@ from diptest.diptest import dip
 app = Flask(__name__)
 
 
-@app.route('/dip')
+# put this sippet ahead of all your bluprints
+# blueprint can also be app~~
+@app.after_request 
+def after_request(response):
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = '*'
+    header['Access-Control-Allow-Methods'] = 'CALC, GET, KIWI'
+    header['Access-Control-Allow-Headers'] = 'content-type'
+    # Other headers can be added here if required
+    return response
+
+@app.route('/dip', methods=['GET', 'CALC', 'KIWI']) # because javascript won't allow adding JSON to a GET
 def get_dip():
-    record = request.get_json() 
-    result = dip_wrapper(record)
+    jsondata = request.get_json() 
+    result = dip(np.array(jsondata))
     return jsonify(result)
 
 
-def dip_wrapper(oned_dataset, is_dataset_numpy=False, data_sorted=False):
-    if not is_dataset_numpy:
-        oned_dataset = np.array(oned_dataset)
-    dip_value = dip(oned_dataset, just_dip=True, is_data_sorted=data_sorted, use_c=True, debug=False)
-    return dip_value
 
 if __name__ == "__main__":
     from waitress import serve
