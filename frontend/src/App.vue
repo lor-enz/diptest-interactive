@@ -3,6 +3,10 @@ import { Chart, Bar } from "vue3-charts";
 
 const startAreaSize = 7;
 const zeroAreaSize = 10;
+
+// Url of the backend server
+const baseURL = "http://5.45.106.13:5063";
+
 function randomIntFromInterval(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
@@ -13,29 +17,31 @@ export default {
     Chart,
     Bar,
   },
+  
   // Properties returned from data() becomes reactive state
   // and will be exposed on `this`.
-
   data() {
     return {
-      count: 0,
       canvas: null,
-      points: [],
-      copyPasteData: [],
-      chartDataHistogram: [
+      canvasLineInterval: 17,
+      points: [], // pixelcoordinates of drawn line start/endpoints
+      chartDataHistogram: [ // data feed for top chart
         { x: "Draw", y: 400 },
         { x: "something", y: 200 },
         { x: "in", y: 100 },
         { x: "the ", y: 50 },
         { x: "canvas", y: 25 },
       ],
-      chartDataCumulative: [
+      chartDataCumulative: [ // data feed for bottom chart
         { x: "Draw", y: 25 },
         { x: "something", y: 50 },
         { x: "in", y: 100 },
         { x: "the ", y: 200 },
         { x: "canvas", y: 400 },
       ],
+      copyPasteData: [], // same as chartDataCumulative but only the y values in a list.
+      dipResponse: 0, // dip value between 0 and 0.25
+      howUnimodalInPercent: 0
     };
   },
 
@@ -59,8 +65,8 @@ export default {
       }
       
       if (e.offsetX >= this.x) {
-        var newX = Math.round(e.offsetX / 20) * 20;
-        var newY = (e.offsetY >= this.canv.height - zeroAreaSize) ? randomIntFromInterval(this.canv.height-5,this.canv.height) : e.offsetY
+        var newX = Math.round(e.offsetX / this.canvasLineInterval) * this.canvasLineInterval;
+        var newY = (e.offsetY >= this.canv.height - zeroAreaSize) ? randomIntFromInterval(this.canv.height-3,this.canv.height) : e.offsetY
         this.drawLine(this.x, this.y, newX, newY);
         this.x = newX;
         this.y = newY;
@@ -97,7 +103,7 @@ export default {
       const map = Array.prototype.map;
       var points = map.call(this.points, (element) => {
         let [x, y] = element;
-        return [x / 20 + 1, y];
+        return [x / this.canvasLineInterval + 1, y];
       });
       // Chart data
       var chartDataHistogram = [];
@@ -123,10 +129,25 @@ export default {
         copyPasteData.push(dict['y']*100);
       });
       this.copyPasteData = copyPasteData
+      this.requestDipValue()
     },
     copy() {
       this.$refs.myinput.focus();
       document.execCommand("copy");
+    },
+    async requestDipValue() {
+      const requestOptions = {
+        method: "CALC",
+        headers: {  "Content-Type": "application/json" },
+        body: JSON.stringify(this.copyPasteData)
+      };
+      fetch(`${baseURL}/dip`, requestOptions)
+        .then((response) => response.text())
+        .then((result) => this.dipResponse = (Number(result)).toFixed(5))
+        .then((result) => this.howUnimodalInPercent = Math.round((1 - this.dipResponse * 4)*100))
+        .then((result) => console.log(result))
+        .catch((error) => console.log("error", error));
+      
     },
   },
 
@@ -170,37 +191,31 @@ export default {
           @mousedown="keepDrawing"
           @mouseleave="convert"
         />
-        <input
-          v-on:focus="$event.target.select()"
-          ref="myinput"
-          readonly
-          :value="copyPasteData"
-        />
-        <button @click="copy">Copy</button>
+        <div class="row">
+          <div class="column">
+            <h2> Dip Value: {{ dipResponse }} Unimodal: {{ howUnimodalInPercent }}%</h2>
+            <input
+              v-on:focus="$event.target.select()"
+              ref="myinput"
+              readonly
+              :value="copyPasteData"
+            />
+            <button @click="copy">Copy</button>
+          </div> 
+         </div>
       </div>
       <div class="column">
         <Chart :data="chartDataHistogram" :margin="margin" :direction="direction">
           <template #layers>
-            <Bar :dataKeys="['x', 'y']" :barStyle="{ fill: '#586d2a' }" />
-
-            template> Chart> div>
-          </template></Chart
-        >
+            <Bar :axis="axis" :dataKeys="['x', 'y']" :barStyle="{ fill: '#889542' }" />
+          </template></Chart>
         <Chart :data="chartDataCumulative" :margin="margin" :direction="direction">
           <template #layers>
-            <Bar :dataKeys="['x', 'y']" :barStyle="{ fill: '#586d2a' }" />
-
-            template> Chart> div>
-          </template></Chart
-        >
+            <Bar :dataKeys="['x', 'y']" :barStyle="{ fill: '#889542' }" />
+          </template></Chart>
       </div>
-    </div>
-    <br />
-    
-    <br />
-    
+    </div>    
   </div>
-  
 </template>
 
 <style scoped>
