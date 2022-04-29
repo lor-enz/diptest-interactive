@@ -5,10 +5,12 @@ const startAreaSize = 7;
 const zeroAreaSize = 10;
 
 // Url of the backend server
-const baseURL = "http://REDACTED:5063";
+// const baseURL = "http://REDACTED:5063";
+const baseURL = "http://localhost:5000";
 
-function randomIntFromInterval(min, max) { // min and max included 
-  return Math.floor(Math.random() * (max - min + 1) + min)
+function randomIntFromInterval(min, max) {
+  // min and max included
+  return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 export default {
@@ -17,22 +19,42 @@ export default {
     Chart,
     Bar,
   },
-  
+
   // Properties returned from data() becomes reactive state
   // and will be exposed on `this`.
   data() {
     return {
       canvas: null,
       canvasLineInterval: 17,
+      axis: {
+        primary: {
+          type: "band",
+          format: (val) => {
+            console.log("val is %s, split_index is %s", val, this.split_index);
+            if (val === this.split_index) {
+              return ">S<";
+            }
+            return val % 5 == 0 || val == 1 ? val : "";
+          },
+        },
+        secondary: {
+          domain: ["dataMin", "dataMax+0.05"],
+          type: "linear",
+          ticks: 8,
+        },
+      },
+
       points: [], // pixelcoordinates of drawn line start/endpoints
-      chartDataHistogram: [ // data feed for top chart
+      chartDataHistogram: [
+        // data feed for top chart
         { x: "Draw", y: 400 },
         { x: "something", y: 200 },
         { x: "in", y: 100 },
         { x: "the ", y: 50 },
         { x: "canvas", y: 25 },
       ],
-      chartDataCumulative: [ // data feed for bottom chart
+      chartDataCumulative: [
+        // data feed for bottom chart
         { x: "Draw", y: 25 },
         { x: "something", y: 50 },
         { x: "in", y: 100 },
@@ -41,7 +63,11 @@ export default {
       ],
       copyPasteData: [], // same as chartDataCumulative but only the y values in a list.
       dipResponse: 0, // dip value between 0 and 0.25
-      howUnimodalInPercent: 0
+      howUnimodalInPercent: 0,
+      split_index: 0,
+      dip_left: 0,
+      dip_right: 0,
+      score: 0,
     };
   },
 
@@ -63,10 +89,15 @@ export default {
       if (e.offsetX < startAreaSize) {
         this.clear();
       }
-      
+
       if (e.offsetX >= this.x) {
-        var newX = Math.round(e.offsetX / this.canvasLineInterval) * this.canvasLineInterval;
-        var newY = (e.offsetY >= this.canv.height - zeroAreaSize) ? randomIntFromInterval(this.canv.height-3,this.canv.height) : e.offsetY
+        var newX =
+          Math.round(e.offsetX / this.canvasLineInterval) *
+          this.canvasLineInterval;
+        var newY =
+          e.offsetY >= this.canv.height - zeroAreaSize
+            ? randomIntFromInterval(this.canv.height - 3, this.canv.height)
+            : e.offsetY;
         this.drawLine(this.x, this.y, newX, newY);
         this.x = newX;
         this.y = newY;
@@ -83,7 +114,12 @@ export default {
       this.canvas.fillRect(0, 0, startAreaSize, this.canv.height);
       // red marked area
       this.canvas.fillStyle = "#d1000050";
-      this.canvas.fillRect(0, this.canv.height-zeroAreaSize, this.canv.width, zeroAreaSize);
+      this.canvas.fillRect(
+        0,
+        this.canv.height - zeroAreaSize,
+        this.canv.width,
+        zeroAreaSize
+      );
     },
     maybeAddPoint(newX, newY) {
       var c = document.getElementById("myCanvas");
@@ -97,8 +133,7 @@ export default {
         this.points.push([newX, newY]);
       }
     },
-    convert() {
-      console.log("convert()");
+    createChartData() {
       // Change from canvas pixel coordinates (that are top to bottom) to something coordinate data like
       const map = Array.prototype.map;
       var points = map.call(this.points, (element) => {
@@ -108,46 +143,70 @@ export default {
       // Chart data
       var chartDataHistogram = [];
       points.forEach(function ([x1, y1], index) {
-        chartDataHistogram.push({ x: x1, y: y1 });
+        chartDataHistogram.push({ x: index + 1, y: y1 });
       });
-      this.chartDataHistogram = chartDataHistogram;
       // Actual CDF (cumulative distribution funciton)
       var chartDataCumulative = [];
       var totalsum = 0;
-      points.forEach(function ([x1, y1], index) {
-          totalsum = totalsum + y1
+      chartDataHistogram.forEach(function (dict, index) {
+        totalsum = totalsum + dict["y"];
       });
       var sum = 0;
-      points.forEach(function ([x1, y1], index) {
-        sum = sum + y1
-        chartDataCumulative.push({ x: x1, y: sum / totalsum });
+      chartDataHistogram.forEach(function (dict, index) {
+        sum = sum + dict["y"];
+        chartDataCumulative.push({ x: index + 1, y: sum / totalsum });
       });
+      this.chartDataHistogram = chartDataHistogram;
       this.chartDataCumulative = chartDataCumulative;
+    },
+    convertCanvasData() {
+      console.log("convert()");
+      this.createChartData();
       // copyPasteData
-      var copyPasteData = []
-      chartDataCumulative.forEach(function (dict, index) {
-        copyPasteData.push(dict['y']*100);
+      var copyPasteData = [];
+      this.chartDataCumulative.forEach(function (dict, index) {
+        copyPasteData.push(dict["y"] * 100);
       });
-      this.copyPasteData = copyPasteData
-      this.requestDipValue()
+      this.copyPasteData = copyPasteData;
+      this.requestDipValue();
     },
     copy() {
       this.$refs.myinput.focus();
       document.execCommand("copy");
     },
+
     async requestDipValue() {
       const requestOptions = {
         method: "CALC",
-        headers: {  "Content-Type": "application/json" },
-        body: JSON.stringify(this.copyPasteData)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(this.copyPasteData),
       };
-      fetch(`${baseURL}/dip`, requestOptions)
-        .then((response) => response.text())
-        .then((result) => this.dipResponse = (Number(result)).toFixed(5))
-        .then((result) => this.howUnimodalInPercent = Math.round((1 - this.dipResponse * 4)*100))
-        .then((result) => console.log(result))
-        .catch((error) => console.log("error", error));
-      
+
+      fetch(`${baseURL}/findsplit`, requestOptions)
+        .then((response) => {
+          console.log("resolved", response);
+          return response.json();
+        })
+        .then((data) => {
+          console.log(data);
+          this.dipResponse = Number(data["dip_everything"]).toFixed(3);
+          this.howUnimodalInPercent = this.howUnimodalInPercent = Math.round(
+            (1 - this.dipResponse * 4) * 100
+          );
+          this.split_index = data["split_index"];
+          this.dip_left = Number(data["dip_left"]).toFixed(2);
+          this.dip_right = Number(data["dip_right"]).toFixed(2);
+          this.score = data["score"];
+          // Change chart to mark split
+          // var element = this.chartDataCumulative[this.split_index]
+          // this.chartDataCumulative[this.split_index] = {"x": "S", "y": element["y"]}
+          // element = this.chartDataHistogram[this.split_index]
+          // this.chartDataHistogram[this.split_index] = {"x": "S", "y": element["y"]}
+          this.createChartData();
+        })
+        .catch((err) => {
+          console.log("error retrieving data", err);
+        });
     },
   },
 
@@ -165,22 +224,21 @@ export default {
 <template>
   <div>
     <h1>Line to Histogram</h1>
-    
+
     <div>
-    
-    <p>
-      
-    </p>
-  </div>
+      <p></p>
+    </div>
     <div class="row">
       <div class="column">
         <h2>How to</h2>
         <p>
-          The large white box below is the canvas. <br> 
-          Move your Mouse cursor from the yellow start area on the left to the right end of the canvas. <br>
-          No need to click! <br> Your mouse will leave a trail, you don't need to click any mouse button while
-          doing so! Once the mourse cursor leaves the canvas the line you drew will
-          be converted into data for the charts on the right.
+          The large white box below is the canvas. <br />
+          Move your Mouse cursor from the yellow start area on the left to the
+          right end of the canvas. <br />
+          No need to click! <br />
+          Your mouse will leave a trail, you don't need to click any mouse
+          button while doing so! Once the mourse cursor leaves the canvas the
+          line you drew will be converted into data for the charts on the right.
         </p>
         <h2>Canvas</h2>
         <canvas
@@ -189,11 +247,14 @@ export default {
           height="500"
           @mousemove="keepDrawing"
           @mousedown="keepDrawing"
-          @mouseleave="convert"
+          @mouseleave="convertCanvasData"
         />
         <div class="row">
           <div class="column">
-            <h2> Dip Value: {{ dipResponse }} Unimodal: {{ howUnimodalInPercent }}%</h2>
+            <h2>
+              Dip Value: {{ dipResponse }} Unimodal: {{ howUnimodalInPercent }}%
+            </h2>
+
             <input
               v-on:focus="$event.target.select()"
               ref="myinput"
@@ -201,20 +262,41 @@ export default {
               :value="copyPasteData"
             />
             <button @click="copy">Copy</button>
-          </div> 
-         </div>
+          </div>
+        </div>
       </div>
       <div class="column">
-        <Chart :data="chartDataHistogram" :margin="margin" :direction="direction">
+        <Chart
+          :data="chartDataHistogram"
+          :margin="margin"
+          :direction="direction"
+          :axis="axis"
+        >
           <template #layers>
-            <Bar :axis="axis" :dataKeys="['x', 'y']" :barStyle="{ fill: '#889542' }" />
-          </template></Chart>
-        <Chart :data="chartDataCumulative" :margin="margin" :direction="direction">
+            <Bar
+              :axis="axis"
+              :dataKeys="['x', 'y']"
+              :barStyle="{ fill: '#889542' }"
+            /> </template
+        ></Chart>
+        <h3>
+          Split at: {{ split_index }}, dip_left: {{ dip_left }}, dip_right:
+          {{ dip_right }}
+        </h3>
+        <Chart
+          :data="chartDataCumulative"
+          :margin="margin"
+          :direction="direction"
+          :axis="axis"
+        >
           <template #layers>
-            <Bar :dataKeys="['x', 'y']" :barStyle="{ fill: '#889542' }" />
-          </template></Chart>
+            <Bar
+              :dataKeys="['x', 'y']"
+              :barStyle="{ fill: '#889542' }"
+            /> </template
+        ></Chart>
       </div>
-    </div>    
+    </div>
   </div>
 </template>
 
@@ -230,6 +312,12 @@ h1 {
 }
 
 h2 {
+  font-family: verdana;
+  color: #383838;
+  text-align: center;
+}
+
+h3 {
   font-family: verdana;
   color: #383838;
   text-align: center;
@@ -253,4 +341,3 @@ p {
   flex: 50%;
 }
 </style>
-
