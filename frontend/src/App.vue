@@ -4,10 +4,6 @@ import { Chart, Bar } from "vue3-charts";
 const startAreaSize = 7;
 const zeroAreaSize = 10;
 
-// Url of the backend server
-// const baseURL = "http://REDACTED:5063";
-const baseURL = "http://localhost:5000";
-
 function randomIntFromInterval(min, max) {
   // min and max included
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -24,13 +20,14 @@ export default {
   // and will be exposed on `this`.
   data() {
     return {
+      backurl: "filled by environment variable", 
       canvas: null,
       canvasLineInterval: 17,
       axis: {
         primary: {
           type: "band",
           format: (val) => {
-            console.log("val is %s, split_index is %s", val, this.split_index);
+            // console.log("val is %s, split_index is %s", val, this.split_index);
             if (val === this.split_index) {
               return ">S<";
             }
@@ -182,7 +179,7 @@ export default {
         body: JSON.stringify(this.copyPasteData),
       };
 
-      fetch(`${baseURL}/findsplit`, requestOptions)
+      fetch(`${this.backurl}/findsplit`, requestOptions)
         .then((response) => {
           console.log("resolved", response);
           return response.json();
@@ -217,6 +214,9 @@ export default {
     this.canv = document.getElementById("myCanvas");
     this.canvas = this.canv.getContext("2d");
     this.clear();
+    console.log("-----------------------------------------------------------------------------")
+    console.log(process.env.VUE_APP_API_URL)
+    this.backurl = process.env.VUE_APP_API_URL
   },
 };
 </script>
@@ -224,7 +224,7 @@ export default {
 <template>
   <div>
     <h1>Line to Histogram</h1>
-
+    <p> {{ backurl }} </p>
     <div>
       <p></p>
     </div>
