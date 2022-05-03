@@ -22,11 +22,13 @@ docker run -d \
 Change the VUE_APP_API_URL variable to the location of your backendserver.
 Feel free to change the frontend port from 8001 to something else that works for your setup. 
 
+
+```-e VUE_APP_API_URL='www.example.org:5063'```  doesn't work! Changing the API requires changing the dockerfile and running docker build again!
 **UNTESTED**
 
 ```
 docker run -d \ 
--e VUE_APP_API_URL='www.example.org:5063' \
+-e VUE_APP_API_URL='www.example.org:5063' \ 
 -p 8001:8080 \ 
 --name diptestfrontend \
  nicepenguin/diptestinteractive
@@ -41,18 +43,15 @@ The frontend is a node application that is created with Vue. You will find html,
 Navigate to the frontend folder and use the familiar yarn commands. I guess you could also use npm.
 ```
 yarn install
-yarn serve
 yarn build
 yarn lint
+yarn serve
 ```
 
-#### Defining the backend server
+```yarn serve``` uses the .env file as supplier for the API url. .env defines localhost as the URL environment variable
 
-define the backend API url as an environment variable named VUE_APP_API_URL either through running the command
-``` export VUE_APP_API_URL="localhost:8081" ```
-before running yarn serve, or by changing the variable in the ```.env``` file
-Or when running docker pass it as an environment variable
 
+```yarn serve-prod``` is a custom command, defined in package.json. It uses the .env.production file as supplier for the API url. .env.production defines Lorenz' server as the URL environment variable
 
 
 ### Backend development

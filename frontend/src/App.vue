@@ -216,29 +216,25 @@ export default {
     this.clear();
     console.log("-----------------------------------------------------------------------------")
     console.log(process.env.VUE_APP_API_URL)
-    this.backurl = process.env.VUE_APP_API_URL
+    this.backurl = (process.env.VUE_APP_API_URL).trim()
   },
 };
 </script>
 
 <template>
   <div>
+    
     <h1>Line to Histogram</h1>
-    <p> {{ backurl }} </p>
-    <div>
-      <p></p>
-    </div>
     <div class="row">
       <div class="column">
+        <p id="footnote"> Backend: [{{ backurl }}] </p>
+    
         <h2>How to</h2>
         <p>
-          The large white box below is the canvas. <br />
-          Move your Mouse cursor from the yellow start area on the left to the
+          Move your mouse cursor from the yellow start area on the leftof the canvas to the
           right end of the canvas. <br />
           No need to click! <br />
-          Your mouse will leave a trail, you don't need to click any mouse
-          button while doing so! Once the mourse cursor leaves the canvas the
-          line you drew will be converted into data for the charts on the right.
+          Once the mourse cursor leaves the canvas the trail the mousecursor left, will be converted into data for the charts on the right.
         </p>
         <h2>Canvas</h2>
         <canvas
@@ -301,9 +297,10 @@ export default {
 </template>
 
 <style scoped>
-#myCanvas {
-  border: 1px solid grey;
-}
+
+
+
+
 
 h1 {
   font-family: verdana;
@@ -340,4 +337,16 @@ p {
 .column {
   flex: 50%;
 }
+
+#myCanvas {
+  border: 1px solid grey;
+}
+
+#footnote {
+  display: flex;
+  font-size: 7px;
+  color: #b5b5b5;
+  text-indent: 0px;
+}
+
 </style>
