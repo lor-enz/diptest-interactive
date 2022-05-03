@@ -7,8 +7,8 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "test": "jest",
-    "serve-dev": "export VUE_APP_API_URL=http://localhost:5000 && vue-cli-service serve",
-    "serve-prod": "export VUE_APP_API_URL=http://REDACTED:5063 && vue-cli-service serve"
+    "serve-dev": "set VUE_APP_API_URL=http://localhost:5000 && vue-cli-service serve",
+    "serve-prod": "set VUE_APP_API_URL=http://REDACTED:5063 && vue-cli-service serve"
   },
   "dependencies": {
     "axios": "^0.27.1",
