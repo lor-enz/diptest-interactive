@@ -51,7 +51,7 @@ yarn serve
 ```yarn serve``` uses the .env file as supplier for the API url. .env defines localhost as the URL environment variable
 
 
-```yarn serve-prod``` is a custom command, defined in package.json. It uses the .env.production file as supplier for the API url. .env.production defines Lorenz' server as the URL environment variable
+```yarn serve-prod``` is a custom command, defined in package.json. There it overwrites the VUE_APP_API_URL environment variable before running yarn serve.
 
 
 ### Backend development

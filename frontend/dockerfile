@@ -10,7 +10,7 @@ RUN npm install -g http-server
 WORKDIR /app
 
 # Set env variable
-ENV VUE_APP_API_URL='REDACTED:5063'
+ENV VUE_APP_API_URL='https://dipapi.lorenz.kiwi/'
 
 # copy both 'package.json' and 'package-lock.json' (if available)
 COPY package*.json ./

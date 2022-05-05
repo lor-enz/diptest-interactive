@@ -2,7 +2,7 @@
 import { Chart, Bar } from "vue3-charts";
 
 const startAreaSize = 7;
-const zeroAreaSize = 10;
+const zeroAreaSize = 20;
 
 function randomIntFromInterval(min, max) {
   // min and max included
@@ -20,7 +20,7 @@ export default {
   // and will be exposed on `this`.
   data() {
     return {
-      backurl: "filled by environment variable", 
+      backurl: "the api url. Filled after mounting with VUE_APP_API_URL environment variable", 
       canvas: null,
       canvasLineInterval: 17,
       axis: {
@@ -93,7 +93,7 @@ export default {
           this.canvasLineInterval;
         var newY =
           e.offsetY >= this.canv.height - zeroAreaSize
-            ? randomIntFromInterval(this.canv.height - 3, this.canv.height)
+            ? randomIntFromInterval(this.canv.height - 4, this.canv.height)
             : e.offsetY;
         this.drawLine(this.x, this.y, newX, newY);
         this.x = newX;
@@ -178,8 +178,9 @@ export default {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(this.copyPasteData),
       };
-
-      fetch(`${this.backurl}/findsplit`, requestOptions)
+      var req_url = `${this.backurl}/findsplit`
+      console.log(`fetching from: ${req_url} with method: ${requestOptions["method"]} `)
+      fetch(req_url, requestOptions)
         .then((response) => {
           console.log("resolved", response);
           return response.json();
@@ -202,7 +203,7 @@ export default {
           this.createChartData();
         })
         .catch((err) => {
-          console.log("error retrieving data", err);
+          console.error("error retrieving data", err);
         });
     },
   },
@@ -214,9 +215,12 @@ export default {
     this.canv = document.getElementById("myCanvas");
     this.canvas = this.canv.getContext("2d");
     this.clear();
-    console.log("-----------------------------------------------------------------------------")
-    console.log(process.env.VUE_APP_API_URL)
+    console.log("----------------------------------MOUNTED-------------------------------------------")
     this.backurl = (process.env.VUE_APP_API_URL).trim()
+    if (!this.backurl.startsWith('http')) {
+        this.backurl = `http://${this.backurl}`
+    }
+    console.log(this.backurl)
   },
 };
 </script>
@@ -227,7 +231,7 @@ export default {
     <h1>Line to Histogram</h1>
     <div class="row">
       <div class="column">
-        <p id="footnote"> Backend: [{{ backurl }}] </p>
+        
     
         <h2>How to</h2>
         <p>
@@ -237,6 +241,7 @@ export default {
           Once the mourse cursor leaves the canvas the trail the mousecursor left, will be converted into data for the charts on the right.
         </p>
         <h2>Canvas</h2>
+        <p id="footnote"> Backend: [{{ backurl }}] </p>
         <canvas
           id="myCanvas"
           width="800"
