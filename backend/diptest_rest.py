@@ -1,5 +1,5 @@
 from posixpath import split
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 import numpy as np
 import diptest.diptest as dt
 app = Flask(__name__)
@@ -16,6 +16,11 @@ def after_request(response):
     # Other headers can be added here if required
     return response
 
+# Main page / Homepage / index
+@app.route('/')
+@app.route('/index')
+def index():
+    return render_template('explanation.html', title='Home')
 
 # because javascript won't allow adding JSON to a GET
 @app.route('/dip', methods=['GET', 'CALC', 'KIWI'])
