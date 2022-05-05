@@ -29,7 +29,7 @@ export default {
           format: (val) => {
             // console.log("val is %s, split_index is %s", val, this.split_index);
             if (val === this.split_index) {
-              return ">S<";
+              return ">S<<<";
             }
             return val % 5 == 0 || val == 1 ? val : "";
           },
@@ -39,6 +39,10 @@ export default {
           type: "linear",
           ticks: 8,
         },
+      },
+      chartSize: {
+        width: 530,
+        height: 380
       },
 
       points: [], // pixelcoordinates of drawn line start/endpoints
@@ -194,13 +198,8 @@ export default {
           this.split_index = data["split_index"];
           this.dip_left = Number(data["dip_left"]).toFixed(2);
           this.dip_right = Number(data["dip_right"]).toFixed(2);
-          this.score = data["score"];
-          // Change chart to mark split
-          // var element = this.chartDataCumulative[this.split_index]
-          // this.chartDataCumulative[this.split_index] = {"x": "S", "y": element["y"]}
-          // element = this.chartDataHistogram[this.split_index]
-          // this.chartDataHistogram[this.split_index] = {"x": "S", "y": element["y"]}
-          this.createChartData();
+          this.score = Number(data["score"]).toFixed(2);
+          this.createChartData(); // Yes calling it a second time after drawing. On purpose.
         })
         .catch((err) => {
           console.error("error retrieving data", err);
@@ -241,7 +240,6 @@ export default {
           Once the mourse cursor leaves the canvas the trail the mousecursor left, will be converted into data for the charts on the right.
         </p>
         <h2>Canvas</h2>
-        <p id="footnote"> Backend: [{{ backurl }}] </p>
         <canvas
           id="myCanvas"
           width="800"
@@ -255,7 +253,7 @@ export default {
             <h2>
               Dip Value: {{ dipResponse }} Unimodal: {{ howUnimodalInPercent }}%
             </h2>
-
+            <p id="centeredparagraph"> Copy CDF values for your own use</p>
             <input
               v-on:focus="$event.target.select()"
               ref="myinput"
@@ -265,6 +263,7 @@ export default {
             <button @click="copy">Copy</button>
           </div>
         </div>
+        <p id="footnote"> Backend: [{{ backurl }}] </p>
       </div>
       <div class="column">
         <Chart
@@ -272,10 +271,10 @@ export default {
           :margin="margin"
           :direction="direction"
           :axis="axis"
+          :size="chartSize"
         >
           <template #layers>
             <Bar
-              :axis="axis"
               :dataKeys="['x', 'y']"
               :barStyle="{ fill: '#889542' }"
             /> </template
@@ -284,11 +283,15 @@ export default {
           Split at: {{ split_index }}, dip_left: {{ dip_left }}, dip_right:
           {{ dip_right }}
         </h3>
+        <h3>
+          Score: {{this.score}}
+        </h3>
         <Chart
           :data="chartDataCumulative"
           :margin="margin"
           :direction="direction"
           :axis="axis"
+          :size="chartSize"
         >
           <template #layers>
             <Bar
@@ -302,10 +305,6 @@ export default {
 </template>
 
 <style scoped>
-
-
-
-
 
 h1 {
   font-family: verdana;
@@ -352,6 +351,10 @@ p {
   font-size: 7px;
   color: #b5b5b5;
   text-indent: 0px;
+}
+
+#centeredparagraph {
+  text-align: center;
 }
 
 </style>
