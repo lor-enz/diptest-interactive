@@ -20,7 +20,8 @@ export default {
   // and will be exposed on `this`.
   data() {
     return {
-      backurl: "the api url. Filled after mounting with VUE_APP_API_URL environment variable", 
+      backurl:
+        "the api url. Filled after mounting with VUE_APP_API_URL environment variable",
       canvas: null,
       canvasLineInterval: 17,
       axis: {
@@ -42,7 +43,7 @@ export default {
       },
       chartSize: {
         width: 530,
-        height: 380
+        height: 380,
       },
 
       points: [], // pixelcoordinates of drawn line start/endpoints
@@ -69,6 +70,8 @@ export default {
       dip_left: 0,
       dip_right: 0,
       score: 0,
+      low_high: "[]",
+      modal_triangle: "[]",
     };
   },
 
@@ -175,15 +178,20 @@ export default {
       this.$refs.myinput.focus();
       document.execCommand("copy");
     },
-
     async requestDipValue() {
+      if (this.copyPasteData.length < 6) {
+        this.wrong();
+        return;
+      }
       const requestOptions = {
         method: "CALC",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(this.copyPasteData),
       };
-      var req_url = `${this.backurl}/findsplit`
-      console.log(`fetching from: ${req_url} with method: ${requestOptions["method"]} `)
+      var req_url = `${this.backurl}/dipsplit`;
+      console.log(
+        `fetching from: ${req_url} with method: ${requestOptions["method"]} `
+      );
       fetch(req_url, requestOptions)
         .then((response) => {
           console.log("resolved", response);
@@ -191,19 +199,32 @@ export default {
         })
         .then((data) => {
           console.log(data);
-          this.dipResponse = Number(data["dip_everything"]).toFixed(3);
+          this.dipResponse = Number(data["dip"]).toFixed(3);
           this.howUnimodalInPercent = this.howUnimodalInPercent = Math.round(
             (1 - this.dipResponse * 4) * 100
           );
+          this.modal_triangle = data["modal_triangle"];
+          this.low_high = data["low_high"];
           this.split_index = data["split_index"];
           this.dip_left = Number(data["dip_left"]).toFixed(2);
           this.dip_right = Number(data["dip_right"]).toFixed(2);
+
           this.score = Number(data["score"]).toFixed(2);
           this.createChartData(); // Yes calling it a second time after drawing. On purpose.
         })
         .catch((err) => {
           console.error("error retrieving data", err);
         });
+    },
+    wrong() {
+          this.dipResponse = "err";
+          this.howUnimodalInPercent = "err";
+          this.modal_triangle = "err";
+          this.low_high = "err";
+          this.split_index = "err";
+          this.dip_left = "err";
+          this.dip_right = "err";
+          this.score = "err";
     },
   },
 
@@ -214,12 +235,14 @@ export default {
     this.canv = document.getElementById("myCanvas");
     this.canvas = this.canv.getContext("2d");
     this.clear();
-    console.log("----------------------------------MOUNTED-------------------------------------------")
-    this.backurl = (process.env.VUE_APP_API_URL).trim()
-    if (!this.backurl.startsWith('http')) {
-        this.backurl = `http://${this.backurl}`
+    console.log(
+      "----------------------------------MOUNTED-------------------------------------------"
+    );
+    this.backurl = process.env.VUE_APP_API_URL.trim();
+    if (!this.backurl.startsWith("http")) {
+      this.backurl = `http://${this.backurl}`;
     }
-    console.log(this.backurl)
+    console.log(this.backurl);
   },
 };
 </script>
@@ -229,14 +252,13 @@ export default {
     <h1>Diptest Tool</h1>
     <div class="row">
       <div class="column">
-        
-    
         <h2>How to</h2>
         <p>
-          Move your mouse cursor from the yellow start area on the leftof the canvas to the
-          right end of the canvas. <br />
+          Move your mouse cursor from the yellow start area on the leftof the
+          canvas to the right end of the canvas. <br />
           No need to click! <br />
-          Once the mourse cursor leaves the canvas the trail the mousecursor left, will be converted into data for the charts on the right.
+          Once the mourse cursor leaves the canvas the trail the mousecursor
+          left, will be converted into data for the charts on the right.
         </p>
         <h2>Canvas</h2>
         <canvas
@@ -249,20 +271,22 @@ export default {
         />
         <div class="row">
           <div class="column">
-            <h2>
-              Dip Value: {{ dipResponse }} Unimodal: {{ howUnimodalInPercent }}%
-            </h2>
-            <p id="centeredparagraph"> Copy CDF values for your own use</p>
-            <input
-              v-on:focus="$event.target.select()"
-              ref="myinput"
-              readonly
-              :value="copyPasteData"
-            />
-            <button @click="copy">Copy</button>
+            <h3 class="centeredparagraph">
+              Dip Value: {{ dipResponse }} Unimodal: {{ howUnimodalInPercent }}% <br>
+              Modal Triangle {{ modal_triangle }} - Low high {{ low_high }}
+            </h3>
+            
+              <p class="centeredparagraph">Copy CDF values for your own use</p>
+              <input
+                v-on:focus="$event.target.select()"
+                ref="myinput"
+                readonly
+                :value="copyPasteData"
+              />
+              <button @click="copy">Copy</button>            
           </div>
         </div>
-        <p id="footnote"> Backend: [{{ backurl }}] </p>
+        <p id="footnote">Backend: [{{ backurl }}]</p>
       </div>
       <div class="column">
         <Chart
@@ -282,9 +306,7 @@ export default {
           Split at: {{ split_index }}, dip_left: {{ dip_left }}, dip_right:
           {{ dip_right }}
         </h3>
-        <h3>
-          Score: {{this.score}}
-        </h3>
+        <h3>Score: {{ this.score }}</h3>
         <Chart
           :data="chartDataCumulative"
           :margin="margin"
@@ -304,7 +326,6 @@ export default {
 </template>
 
 <style scoped>
-
 h1 {
   font-family: verdana;
   color: #383838;
@@ -352,8 +373,7 @@ p {
   text-indent: 0px;
 }
 
-#centeredparagraph {
+.centeredparagraph {
   text-align: center;
 }
-
 </style>
