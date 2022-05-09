@@ -225,9 +225,8 @@ export default {
 </script>
 
 <template>
-  <div>
-    
-    <h1>Line to Histogram</h1>
+  <div id="app">
+    <h1>Diptest Tool</h1>
     <div class="row">
       <div class="column">
         
