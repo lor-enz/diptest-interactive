@@ -13,27 +13,28 @@ def split_at(index, column):
 
 
 def goal_function_for(sorted_numpy_column):
-    margin = 5
+    margin = 3
     if len(sorted_numpy_column) < 2 + margin * 2:
         print(
             f"CDF array too short {len(sorted_numpy_column)} < {2 + margin * 2}")
         # logger.error(f"CDF array too short {len(sorted_numpy_column)} < {2 + margin * 2}")
         return -1, -1, -1, -1, -1
 
-    log = "Goal function..."
+    log = "Goal function: "
 
-    b_score = -999  # we want: max
-    b_dip_left = 999  # we want: min
-    b_dip_right = 999  # we want: min
+    # Initial value only matters for b_score
+    b_score = -999  # we want: MAX
+    b_dip_left = 0  # we want: min
+    b_dip_right = 0 # we want: min
     b_index = -1
     dip_all = dt.dip(sorted_numpy_column)
     length = len(sorted_numpy_column)
 
-    for i in range(2+margin, len(sorted_numpy_column)-(1+margin)):
+    for i in range(margin, len(sorted_numpy_column)-(margin)):
         left, right = split_at(i, sorted_numpy_column)
         dip_left = dt.dip(left)
         dip_right = dt.dip(right)
-        score = dip_all + dip_left + dip_right # we want to maximize this!
+        score = dip_all + dip_left + dip_right 
         # print(f"Calcuated score at split {i} is {score}. Current best score is {b_score} at split {b_index} ")
         if score > b_score:
             b_score = score
@@ -43,6 +44,7 @@ def goal_function_for(sorted_numpy_column):
         assert length == len(sorted_numpy_column)
     log += f" Best results sc:{round(b_score,3)} in:{round(b_index,3)} dip_app:{round(dip_all,3)} dip_l:{round(b_dip_left,3)} dip_r:{round(b_dip_right,3)}"
     # logger.info(log)
+    print(log)
     return b_score, b_index, dip_all, b_dip_left, b_dip_right
 
 

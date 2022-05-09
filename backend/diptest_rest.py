@@ -31,26 +31,39 @@ def index():
 @app.route('/dip', methods=['GET', 'CALC', 'KIWI'])
 def get_dip():
     jsondata = request.get_json()
-    result = dt.dip(np.array(jsondata))
-    return jsonify(result)
+    dip_value, low_high, modal_triangle = dt.dip(
+        np.sort(np.array(jsondata)), just_dip=False, is_data_sorted=True)
+    json_response = {"dip": dip_value,
+                     "low_high": low_high,
+                     "modal_triangle": modal_triangle
+                     }
+    return jsonify(json_response)
 
 
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
 @app.route('/diptest', methods=['GET', 'CALC', 'KIWI'])
 def get_diptest():
     jsondata = request.get_json()
-    result = dt.dip_test(np.array(jsondata))
-    return jsonify(result)
+    data_dip, pval = dt.dip_test(np.array(jsondata))
+    json_response = {"dip": data_dip,
+                     "pval": pval}
+    return jsonify(json_response)
 
 
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
-@app.route('/findsplit', methods=['GET', 'CALC', 'KIWI'])
+@app.route('/dipsplit', methods=['GET', 'CALC', 'KIWI'])
 def find_split():
 
     cdf_vector = np.array(request.get_json())
     score, index, dip_all, dip_left, dip_right = goal_function_for(cdf_vector)
 
-    json_response = {"dip_everything": dip_all,
+    dip_value, low_high, modal_triangle = dt.dip(
+        np.sort(cdf_vector), just_dip=False, is_data_sorted=True)
+    json_response = {"dip": dip_value,
+                     "low_high": low_high,
+                     "modal_triangle": modal_triangle,
+                     # - - - - - - -
+                     "dip_everything": dip_all, # ToDo: this is the same as "dip" remove in future
                      "split_index": index,
                      "dip_left": dip_left,
                      "dip_right": dip_right,

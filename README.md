@@ -24,8 +24,8 @@ Feel free to change the frontend port from 8001 to something else that works for
 
 
 ```-e VUE_APP_API_URL='www.example.org:5063'```  doesn't work! Changing the API requires changing the dockerfile and running docker build again!
-**UNTESTED**
 
+**UNTESTED**
 ```
 docker run -d \ 
 -e VUE_APP_API_URL='www.example.org:5063' \ 
