@@ -42,7 +42,7 @@ def goal_function_for(sorted_numpy_column):
             b_dip_right = dip_right
             b_index = i
         assert length == len(sorted_numpy_column)
-    log += f" Best results sc:{round(b_score,3)} in:{round(b_index,3)} dip_app:{round(dip_all,3)} dip_l:{round(b_dip_left,3)} dip_r:{round(b_dip_right,3)}"
+    log += f" Best results sc:{round(b_score,3)} in:{round(b_index,3)} dip_all:{round(dip_all,3)} dip_l:{round(b_dip_left,3)} dip_r:{round(b_dip_right,3)}"
     # logger.info(log)
     print(log)
     return b_score, b_index, dip_all, b_dip_left, b_dip_right

@@ -30,9 +30,9 @@ def index():
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
 @app.route('/dip', methods=['GET', 'CALC', 'KIWI'])
 def get_dip():
-    jsondata = request.get_json()
+    cdf_vector = np.array(request.get_json())
     dip_value, low_high, modal_triangle = dt.dip(
-        np.sort(np.array(jsondata)), just_dip=False, is_data_sorted=True)
+        np.sort(cdf_vector), just_dip=False, is_data_sorted=True)
     json_response = {"dip": dip_value,
                      "low_high": low_high,
                      "modal_triangle": modal_triangle
@@ -43,8 +43,8 @@ def get_dip():
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
 @app.route('/diptest', methods=['GET', 'CALC', 'KIWI'])
 def get_diptest():
-    jsondata = request.get_json()
-    data_dip, pval = dt.dip_test(np.array(jsondata))
+    cdf_vector = np.array(request.get_json())
+    data_dip, pval = dt.dip_test(cdf_vector)
     json_response = {"dip": data_dip,
                      "pval": pval}
     return jsonify(json_response)
@@ -53,21 +53,26 @@ def get_diptest():
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
 @app.route('/dipsplit', methods=['GET', 'CALC', 'KIWI'])
 def find_split():
-
+    
     cdf_vector = np.array(request.get_json())
+    if len(cdf_vector) < 8:
+        return jsonify({"message": "Array too short"})
     score, index, dip_all, dip_left, dip_right = goal_function_for(cdf_vector)
 
     dip_value, low_high, modal_triangle = dt.dip(
         np.sort(cdf_vector), just_dip=False, is_data_sorted=True)
+    _, pval = dt.dip_test(cdf_vector)
     json_response = {"dip": dip_value,
                      "low_high": low_high,
                      "modal_triangle": modal_triangle,
                      # - - - - - - -
-                     "dip_everything": dip_all, # ToDo: this is the same as "dip" remove in future
                      "split_index": index,
                      "dip_left": dip_left,
                      "dip_right": dip_right,
-                     "score": score}
+                     "score": score,
+                     # - - - - - - -
+                     "pval": pval
+                     }
     return jsonify(json_response)
 
 
