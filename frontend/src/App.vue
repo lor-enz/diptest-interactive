@@ -3,6 +3,7 @@ import { Chart, Bar } from "vue3-charts";
 
 const startAreaSize = 7;
 const zeroAreaSize = 20;
+const canvasLineInterval = 17;
 
 function randomIntFromInterval(min, max) {
   // min and max included
@@ -23,7 +24,6 @@ export default {
       backurl:
         "the api url. Filled after mounting with VUE_APP_API_URL environment variable",
       canvas: null,
-      canvasLineInterval: 17,
       axis: {
         primary: {
           type: "band",
@@ -75,8 +75,6 @@ export default {
     };
   },
 
-  // Methods are functions that mutate state and trigger updates.
-  // They can be bound as event listeners in templates.
   methods: {
     drawLine(x1, y1, x2, y2) {
       let ctx = this.canvas;
@@ -96,8 +94,8 @@ export default {
 
       if (e.offsetX >= this.x) {
         var newX =
-          Math.round(e.offsetX / this.canvasLineInterval) *
-          this.canvasLineInterval;
+          Math.round(e.offsetX / canvasLineInterval) *
+          canvasLineInterval;
         var newY =
           e.offsetY >= this.canv.height - zeroAreaSize
             ? randomIntFromInterval(this.canv.height - 4, this.canv.height)
@@ -142,7 +140,7 @@ export default {
       const map = Array.prototype.map;
       var points = map.call(this.points, (element) => {
         let [x, y] = element;
-        return [x / this.canvasLineInterval + 1, y];
+        return [x / canvasLineInterval + 1, y];
       });
       // Chart data
       var chartDataHistogram = [];
