@@ -4,6 +4,11 @@ const startAreaSize = 7;
 const zeroAreaSize = 20;
 const canvasLineInterval = 17;
 
+const colorblind_friendly_palette = {
+  orange: "230,159,0" // ???
+}
+
+
 function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
@@ -15,7 +20,6 @@ export default {
   },
   data() {
     return {
-      // new test data BEGIN
       upperChartData: {
         labels: ["Draw", "something", "in", "the", "Canvas"],
         datasets: [
@@ -34,10 +38,8 @@ export default {
           },
         ],
       },
-
-      // new test data END
       backurl:
-        "the api url. Filled after mounting with VUE_APP_API_URL environment variable",
+        "the api url. Filled with VUE_APP_API_URL environment variable during BUILD, not RUNTIME",
       canvas: null,
       cleanHistogramData: [],
       cleanCumulativeData: [],
@@ -153,10 +155,11 @@ export default {
       this.upperChartData.labels = labels;
       // Bar Colors
       var barColors = [];
-      var kiwigreen = "rgba(136, 149, 66)";
-      var lightgreen = "rgba(201, 219, 96)";
+      var lightgreen = "rgba(136, 149, 66)";
+      var kiwigreen = "rgba(201, 219, 96)";
       var red = "rgba(227, 98, 128)";
       var blue = "rgba(56, 182, 217)";
+      var purple = "rgba(142,140,173)";
 
       var split_index = this.split_index;
       this.cleanHistogramData.forEach(function (value, index) {
@@ -168,6 +171,12 @@ export default {
       barColors[this.modal_triangle[0]] = red;
       barColors[this.modal_triangle[1]] = red;
       barColors[this.modal_triangle[2]] = red;
+      this.low_high.forEach((element) => {
+        if (this.modal_triangle.includes(element)) {
+          barColors[element] = purple;
+        }
+      });
+
       this.lowerChartData.datasets[0].backgroundColor = barColors;
       this.upperChartData.datasets[0].backgroundColor = barColors;
     },
@@ -235,7 +244,7 @@ export default {
     this.canvas = this.canv.getContext("2d");
     this.clear();
     console.log(
-      "----------------------------------MOUNTED-------------------------------------------"
+      "--------------MOUNTED--------------"
     );
     this.backurl = process.env.VUE_APP_API_URL.trim();
     if (!this.backurl.startsWith("http")) {
