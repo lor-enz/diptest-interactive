@@ -5,9 +5,8 @@ const zeroAreaSize = 20;
 const canvasLineInterval = 17;
 
 const colorblind_friendly_palette = {
-  orange: "230,159,0" // ???
-}
-
+  orange: "230,159,0", // ???
+};
 
 function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -52,6 +51,7 @@ export default {
       score: 0,
       low_high: "[]",
       modal_triangle: "[]",
+      pval: 0,
     };
   },
 
@@ -155,11 +155,11 @@ export default {
       this.upperChartData.labels = labels;
       // Bar Colors
       var barColors = [];
-      var lightgreen = "rgba(136, 149, 66)";
-      var kiwigreen = "rgba(201, 219, 96)";
-      var red = "rgba(227, 98, 128)";
-      var blue = "rgba(56, 182, 217)";
-      var purple = "rgba(142,140,173)";
+      var lightgreen = "rgb(136, 149, 66)";
+      var kiwigreen = "rgb(201, 219, 96)";
+      var red = "rgb(227, 98, 128)";
+      var blue = "rgb(56, 182, 217)";
+      var purple = "rgb(142,140,173)";
 
       var split_index = this.split_index;
       this.cleanHistogramData.forEach(function (value, index) {
@@ -200,11 +200,11 @@ export default {
       );
       fetch(req_url, requestOptions)
         .then((response) => {
-          console.log("resolved", response);
+          console.log("Response:", response);
           return response.json();
         })
         .then((data) => {
-          console.log(data);
+          console.log("...with data:", data);
           this.dipResponse = Number(data["dip"]).toFixed(3);
           this.howUnimodalInPercent = this.howUnimodalInPercent = Math.round(
             (1 - this.dipResponse * 4) * 100
@@ -214,6 +214,7 @@ export default {
           this.split_index = data["split_index"];
           this.dip_left = Number(data["dip_left"]).toFixed(2);
           this.dip_right = Number(data["dip_right"]).toFixed(2);
+          this.pval = Number(data["pval"]).toFixed(3);
 
           this.score = Number(data["score"]).toFixed(2);
           this.createChartData();
@@ -243,14 +244,11 @@ export default {
     this.canv = document.getElementById("myCanvas");
     this.canvas = this.canv.getContext("2d");
     this.clear();
-    console.log(
-      "--------------MOUNTED--------------"
-    );
+    console.log("--------------MOUNTED--------------");
     this.backurl = process.env.VUE_APP_API_URL.trim();
     if (!this.backurl.startsWith("http")) {
       this.backurl = `http://${this.backurl}`;
     }
-    console.log(this.backurl);
   },
 };
 </script>
@@ -280,7 +278,7 @@ export default {
         <div class="row">
           <div class="column">
             <h3 class="centeredparagraph">
-              Dip Value: {{ dipResponse }} Unimodal: {{ howUnimodalInPercent }}%
+              Dip: {{ dipResponse }} (or: {{ howUnimodalInPercent }}% unimodal)  
               <br />
               Modal Triangle {{ modal_triangle }} - Low high {{ low_high }}
             </h3>
@@ -296,7 +294,7 @@ export default {
           Split at: {{ split_index }}, dip_left: {{ dip_left }}, dip_right:
           {{ dip_right }}
         </h3>
-        <h3>Score: {{ this.score }}</h3>
+        <h3>Score: {{ this.score }} Pval: {{ pval }}</h3>
         <div>
           <BarChart :chartData="lowerChartData" />
         </div>
