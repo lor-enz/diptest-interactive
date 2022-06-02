@@ -1,4 +1,4 @@
-from rafodi import goal_function_for
+from dip_goal import goal_function_for, all_dip_calculations
 from posixpath import split
 from flask import Flask, jsonify, request, render_template
 import numpy as np
@@ -7,8 +7,8 @@ app = Flask(__name__)
 
 
 # Copied from stackoverflow
-# put this snippet ahead of all your blueprints
-# blueprint can also be app (I did replace that)
+# put this snippet ahead of all your @blueprint 
+# @blueprint can also be @app (Lorenz: I did replace that)
 @app.after_request
 def after_request(response):
     header = response.headers
@@ -55,13 +55,13 @@ def get_diptest():
 def find_split():
     
     cdf_vector = np.array(request.get_json())
+    print(f"Got request with cdf: {cdf_vector[:3]} ... ]")
     if len(cdf_vector) < 8:
         return jsonify({"message": "Array too short"})
     score, index, dip_all, dip_left, dip_right = goal_function_for(cdf_vector)
 
-    dip_value, low_high, modal_triangle = dt.dip(
-        np.sort(cdf_vector), just_dip=False, is_data_sorted=True)
-    _, pval = dt.dip_test(cdf_vector)
+    dip_value, pval, modal_triangle, low_high = all_dip_calculations(data=np.sort(cdf_vector), is_data_sorted=True)
+
     json_response = {"dip": dip_value,
                      "low_high": low_high,
                      "modal_triangle": modal_triangle,
