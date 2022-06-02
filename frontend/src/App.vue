@@ -42,12 +42,12 @@ export default {
       canvas: null,
       cleanHistogramData: [],
       cleanCumulativeData: [],
-      points: [], // pixelcoordinates of drawn line start/endpoints
+      points: [1,2,3], // pixelcoordinates of drawn line start/endpoints
       dipResponse: 0, // dip value between 0 and 0.25
       howUnimodalInPercent: 0,
       split_index: 0,
-      dip_left: 0,
-      dip_right: 0,
+      pval_left: 0,
+      pval_right: 0,
       score: 0,
       low_high: "[]",
       modal_triangle: "[]",
@@ -85,9 +85,13 @@ export default {
         this.maybeAddPoint(newX, newY);
       }
     },
-    clear() {
-      var canv = document.getElementById("myCanvas");
-      this.canvas.clearRect(0, 0, canv.width, canv.height);
+    clear() {    
+      if (this.points.length < 3) {
+        return
+      }
+      this.canvas.fillStyle = "#ffffffEE";
+      this.canvas.fillRect(0,0,this.canv.width,this.canv.height);
+
       this.x = 0;
       this.points = [];
       // yellow marked area
@@ -212,8 +216,8 @@ export default {
           this.modal_triangle = data["modal_triangle"];
           this.low_high = data["low_high"];
           this.split_index = data["split_index"];
-          this.dip_left = Number(data["dip_left"]).toFixed(2);
-          this.dip_right = Number(data["dip_right"]).toFixed(2);
+          this.pval_left = Number(data["dip_left"]).toFixed(2);
+          this.pval_right = Number(data["dip_right"]).toFixed(2);
           this.pval = Number(data["pval"]).toFixed(3);
 
           this.score = Number(data["score"]).toFixed(2);
@@ -231,8 +235,8 @@ export default {
       this.modal_triangle = "err";
       this.low_high = "err";
       this.split_index = "err";
-      this.dip_left = "err";
-      this.dip_right = "err";
+      this.pval_left = "err";
+      this.pval_right = "err";
       this.score = "err";
     },
   },
@@ -278,7 +282,7 @@ export default {
         <div class="row">
           <div class="column">
             <h3 class="centeredparagraph">
-              Dip: {{ dipResponse }} (or: {{ howUnimodalInPercent }}% unimodal)  
+              Dip: {{ dipResponse }}  Pval: {{ pval }}
               <br />
               Modal Triangle {{ modal_triangle }} - Low high {{ low_high }}
             </h3>
@@ -291,8 +295,8 @@ export default {
           <BarChart :chartData="upperChartData" />
         </div>
         <h3>
-          Split at: {{ split_index }}, dip_left: {{ dip_left }}, dip_right:
-          {{ dip_right }}
+          Split at: {{ split_index }}, pval_left: {{ pval_left }}, pval_right:
+          {{ pval_right }}
         </h3>
         <h3>Score: {{ this.score }} Pval: {{ pval }}</h3>
         <div>
