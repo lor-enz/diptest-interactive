@@ -3,7 +3,7 @@ from random import seed
 import numpy as np
 from csv import reader
 from math import sqrt
-from rafodi import goal_function_for
+import dip_goal as dg
 
 # # # # # # # # # # # # # # # # # 
 #          random forest        #
@@ -57,13 +57,13 @@ def split(node, max_depth, min_size, n_features, depth, use_dip):
     if len(left) <= min_size:
         node['left'] = to_terminal(left)
     else:
-        node['left'] = get_split(left, n_features, use_dip)
+        node['left'] = get_split_wrapper(left, n_features, use_dip)
         split(node['left'], max_depth, min_size, n_features, depth + 1, use_dip)
     # process right child
     if len(right) <= min_size:
         node['right'] = to_terminal(right)
     else:
-        node['right'] = get_split(right, n_features, use_dip)
+        node['right'] = get_split_wrapper(right, n_features, use_dip)
         split(node['right'], max_depth, min_size, n_features, depth + 1, use_dip)
 
 
@@ -74,7 +74,7 @@ def to_terminal(group):
     return max(set(outcomes), key=outcomes.count)
 
 
-def get_split(dataset, n_features, use_dip):
+def get_split_wrapper(dataset, n_features, use_dip):
     if use_dip:
         return get_split_dip(dataset, n_features)
     else:
@@ -96,31 +96,36 @@ def get_split_gini(dataset, n_features):
             gini = gini_index(groups, class_values)
             if gini < b_score:
                 b_index, b_value, b_score, b_groups = index, row[index], gini, groups
+    # index: where in the dataset did we just decide to split?
+    # value: what's the value at position index in dataset?
+    # groups: left and right based on the value: row[index] 
     return {'index':b_index, 'value':b_value, 'groups':b_groups}
 
 
-# Is this tested? Does it work?
+# 
 def get_split_dip(dataset, n_features, is_dataset_numpy=False):
     if not is_dataset_numpy:
         dataset = np.array(dataset)
-    class_values = list(set(row[-1] for row in dataset))  # last column of
-    b_index = 999  # column
-    b_value = 999  # value = row[index]
-    b_score = 0  # dip value
-    b_groups = None  # left and right group
+    b_score = 999 # lower is better, so we start with something big to be overwritten
+    b_split = 999
+    b_features_index = 999
     features = list()
     while len(features) < n_features:
         index = randrange(len(dataset[0]) - 1)
         if index not in features:
             features.append(index)
-    for index in features:
-        column = dataset.T[index]
-        score = goal_function_for(column)
-        if score > b_score:
-            b_index = index
-            b_value = column[index]
-            b_score = score
-    return {'index': b_index, 'value': b_value, 'groups': b_groups}
+    for features_index in features:
+        current_feature = dataset[:,features_index]
+        cdf, histo, bins = dg.histogram_and_cdf(current_feature)
+        new_score, goal_split, _, _, _ = dg.goal_function_for(np.array(cdf))
+        if new_score < b_score:
+            b_score = new_score
+            b_split = goal_split
+            b_features_index = features_index
+    splitbin = bins[goal_split]
+    groups = test_split(b_features_index, splitbin, dataset) 
+    left, right = groups
+    return {'index': features_index, 'value': splitbin, 'groups': groups}
 
 # Split a dataset based on an attribute and an attribute value
 def test_split(index, value, dataset):
@@ -157,19 +162,9 @@ def gini_index(groups, classes):
 # Build a decision tree
 def build_tree(train, max_depth, min_size, n_features, use_dip):
     # print(f"build_tree {train} {max_depth} {min_size} {n_features}")
-    root = get_split(train, n_features, use_dip)
+    root = get_split_wrapper(train, n_features, use_dip)
     split(root, max_depth, min_size, n_features, 1, use_dip)
     return root
-
-
-# Print a decision tree
-def print_tree(node, depth=0):
-    if isinstance(node, dict):
-        print('%s[X%d < %.3f]' % ((depth*' ', (node['index']+1), node['value'])))
-        print_tree(node['left'], depth+1)
-        print_tree(node['right'], depth+1)
-    else:
-        print('%s[%s]' % ((depth*' ', node)))
 
 # Random Forest Algorithm
 def random_forest_gini(train, test, max_depth, min_size, sample_size, n_trees, n_features):
@@ -188,6 +183,7 @@ def random_forest_dip(train, test, max_depth, min_size, sample_size, n_trees, n_
         sample = subsample(train, sample_size)
         tree = build_tree(sample, max_depth, min_size, n_features, use_dip=True)
         trees.append(tree)
+    print ("trees created")
     predictions = [bagging_predict(trees, row) for row in test]
     return(predictions)
 
@@ -259,36 +255,30 @@ def bagging_predict(trees, row):
     return max(set(predictions), key=predictions.count)
 
 
-dataset = [[2.771244718,1.784783929,0],
-    [1.728571309,1.169761413,0],
-    [3.678319846,2.81281357,0],
-    [3.961043357,2.61995032,0],
-    [2.999208922,2.209014212,0],
-    [7.497545867,3.162953546,1],
-    [9.00220326,3.339047188,1],
-    [7.444542326,0.476683375,1],
-    [10.12493903,3.234550982,1],
-    [6.642287351,3.319983761,1]]
+def run_and_test(algorithm = random_forest_dip):
+    
+    # Test the random forest algorithm on sonar dataset
+    seed(2)
+    # load and prepare data
+    filename = 'sonar.csv'
+    dataset = load_csv(filename)
+    # convert string attributes to integers
+    for i in range(0, len(dataset[0])-1):
+        str_column_to_float(dataset, i)
+    # convert class column to integers
+    str_column_to_int(dataset, len(dataset[0])-1)
+    # evaluate algorithm
+    n_folds = 5
+    max_depth = 10
+    min_size = 2
+    sample_size = 1.0
+    n_features = int(sqrt(len(dataset[0])-1))
+    
+    for n_trees in [30]:
+        scores = evaluate_algorithm(dataset, algorithm, n_folds, max_depth, min_size,
+            sample_size, n_trees, n_features)
+        print('Trees: %d' % n_trees)
+        print('Scores: %s' % scores)
+        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
 
-# Test the random forest algorithm on sonar dataset
-seed(2)
-# load and prepare data
-filename = 'sonar.csv'
-dataset = load_csv(filename)
-# convert string attributes to integers
-for i in range(0, len(dataset[0])-1):
-    str_column_to_float(dataset, i)
-# convert class column to integers
-str_column_to_int(dataset, len(dataset[0])-1)
-# evaluate algorithm
-n_folds = 5
-max_depth = 10
-min_size = 1
-sample_size = 1.0
-n_features = int(sqrt(len(dataset[0])-1))
-for n_trees in [1, 5, 10]:
-    scores = evaluate_algorithm(dataset, random_forest_gini, n_folds, max_depth, min_size,
-        sample_size, n_trees, n_features)
-    print('Trees: %d' % n_trees)
-    print('Scores: %s' % scores)
-    print('Mean Accuracy: %.3f%%' % (sum(scores)/float(len(scores))))
+run_and_test(random_forest_dip)

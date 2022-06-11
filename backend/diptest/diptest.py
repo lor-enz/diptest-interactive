@@ -37,8 +37,12 @@ def dip(X, just_dip=True, is_data_sorted=False, use_c=True, debug=False):
     if not is_data_sorted:
         X = np.sort(X)
     if N < 4 or X[0] == X[-1]:
-        d = 0.0
-        return d if just_dip else (d, (0, N-1), None, True)
+        # Edited by Lorenz START
+        # Removing the last value because it doesn't make sense? 
+        # Typically THREE values are returned: dip_value, low_high, modal_triangle
+        # Why would it be FOUR here? So let's yeet the last (boolean) one. 
+        return 0.0 if just_dip else (0.0, (0, N-1), None, ) # True)
+        # Edited by Lorenz END
     if use_c and load_c_dip_file():
         # Prepare data to match C data types
         X = np.asarray(X, dtype=np.float64)
