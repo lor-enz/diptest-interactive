@@ -216,9 +216,9 @@ export default {
           this.modal_triangle = data["modal_triangle"];
           this.low_high = data["low_high"];
           this.split_index = data["split_index"];
-          this.pval_left = Number(data["dip_left"]).toFixed(2);
-          this.pval_right = Number(data["dip_right"]).toFixed(2);
-          this.pval = Number(data["pval"]).toFixed(3);
+          this.pval_left = Number(data["dip_left"]).toFixed(4);
+          this.pval_right = Number(data["dip_right"]).toFixed(4);
+          this.pval = Number(data["pval"]).toFixed(4);
 
           this.score = Number(data["score"]).toFixed(2);
           this.createChartData();
@@ -284,7 +284,7 @@ export default {
             <h3 class="centeredparagraph">
               Dip: {{ dipResponse }}  Pval: {{ pval }}
               <br />
-              Modal Triangle {{ modal_triangle }} - Low high {{ low_high }}
+              Modal Triangle 🟥 {{ modal_triangle }} - Low high 🟦 {{ low_high }}
             </h3>
           </div>
         </div>
@@ -298,7 +298,7 @@ export default {
           Split at: {{ split_index }}, pval_left: {{ pval_left }}, pval_right:
           {{ pval_right }}
         </h3>
-        <h3>Score: {{ this.score }} Pval: {{ pval }}</h3>
+        <h3>Score (lower is better): {{ this.score }}</h3>
         <div>
           <BarChart :chartData="lowerChartData" />
         </div>
