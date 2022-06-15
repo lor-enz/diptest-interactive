@@ -1,7 +1,9 @@
 # Interactive Diptest
 
 A website / web application that offers a way to to explore and play around with the Hartigan diptest.
-First "draw" a barchart. Using that data a cumulative distribution function (displayed as another barchart) is created. The Hartigan Diptest is applied on that data. The results (dip_value, p_value, modal_triangle, low_high) are displayed plus some info on my own experimental shenanigans. 
+First "draw" a barchart. That barchart represents a histogram for data that could exist. The Hartigan Diptest is applied to a possible data set that would match histogram (the drawn barchart). The application also creates a cumulative distribution function based on the histogram.
+
+The results (dip_value, p_value, modal_triangle, low_high) are displayed plus some info on my own experimental shenanigans. 
 
 It's readily available at [diptool.lorenz.kiwi](https://diptool.lorenz.kiwi/). 
 
@@ -63,3 +65,21 @@ Navigate to the backend folder, here you can run
 python diptest_rest.py
 ``` 
 The Server will always run on port 5000.
+
+### Building the docker images
+
+Navigate to **frontend** folder and run this command (with docker daemon running)
+
+```docker build -t diptestinteractive .``` 
+
+Navigate to **backend** folder and run this command (with docker daemon running)
+
+```docker build -t diptestbackend .``` 
+
+This is a personal note to myself: 
+These are the commmands to get the right tags to upload them to the docker hub.
+```
+docker build -t nicepenguin/diptestinteractive .
+docker build -t nicepenguin/diptestbackend .
+``` 
+This only works for myself.
