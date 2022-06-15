@@ -3,6 +3,7 @@ from posixpath import split
 from flask import Flask, jsonify, request, render_template
 import numpy as np
 import diptest.diptest as dt
+import data_prep as data_prep
 app = Flask(__name__)
 
 
@@ -28,50 +29,29 @@ def index():
 
 
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
-@app.route('/dip', methods=['GET', 'CALC', 'KIWI'])
-def get_dip():
-    cdf_vector = np.array(request.get_json())
-    dip_value, low_high, modal_triangle = dt.dip(
-        np.sort(cdf_vector), just_dip=False, is_data_sorted=True)
-    json_response = {"dip": dip_value,
-                     "low_high": low_high,
-                     "modal_triangle": modal_triangle
-                     }
-    return jsonify(json_response)
-
-
-# allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
-@app.route('/diptest', methods=['GET', 'CALC', 'KIWI'])
-def get_diptest():
-    cdf_vector = np.array(request.get_json())
-    data_dip, pval = dt.dip_test(cdf_vector)
-    json_response = {"dip": data_dip,
-                     "pval": pval}
-    return jsonify(json_response)
-
-
-# allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
-@app.route('/dipsplit', methods=['GET', 'CALC', 'KIWI'])
-def find_split():
-    
-    cdf_vector = np.array(request.get_json())
-    print(f"Got request with cdf: {cdf_vector[:3]} ... ]")
-    if len(cdf_vector) < 8:
+@app.route('/dip-from-histo', methods=['GET', 'CALC', 'KIWI'])
+def dip_from_histo():
+    histo = np.array(request.get_json()) # TODO is np.array(...) required here?
+    randomized_samples = np.array(data_prep.infer_samples_from_histo(histo, standard_offset=0.1))
+    actual_samples = np.array(data_prep.infer_samples_from_histo(histo, randomize=False))
+    print(f"Got request with {len(actual_samples)} samples: {actual_samples[:3]} ... ]")
+    if len(randomized_samples) < 8:
         return jsonify({"message": "Array too short"})
-    score, index, dip_all, dip_left, dip_right = goal_function_for(cdf_vector)
-
-    dip_value, pval, modal_triangle, low_high = all_dip_calculations(data=np.sort(cdf_vector), is_data_sorted=True)
-
+    
+    #score, index, dip_all, dip_left, dip_right = goal_function_for(samples)
+    dip_value, pval, modal_triangle, low_high = all_dip_calculations(data=randomized_samples, is_data_sorted=True)
+   
+    a = int(actual_samples[modal_triangle[0]])
+    b = int(actual_samples[modal_triangle[1]])
+    c = int(actual_samples[modal_triangle[2]])
+    mod_tri = [a, b, c]
+    g = int(actual_samples[low_high[0]])
+    h = int(actual_samples[low_high[0]])
+    lo_hi = [g,h]
     json_response = {"dip": dip_value,
-                     "low_high": low_high,
-                     "modal_triangle": modal_triangle,
-                     # - - - - - - -
-                     "split_index": index,
-                     "dip_left": dip_left,
-                     "dip_right": dip_right,
-                     "score": score,
-                     # - - - - - - -
-                     "pval": pval
+                     "pval": pval,
+                     "low_high": lo_hi,
+                     "modal_triangle": mod_tri,
                      }
     return jsonify(json_response)
 
