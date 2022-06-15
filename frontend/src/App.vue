@@ -265,11 +265,12 @@ export default {
       <div class="column">
         <h2>How to</h2>
         <p>
-          Move your mouse cursor from the yellow start area on the leftof the
-          canvas to the right end of the canvas. <br />
-          No need to click! <br />
-          Once the mourse cursor leaves the canvas the trail the mousecursor
-          left, will be converted into data for the charts on the right.
+          📈 Move your mouse cursor from the left of the canvas to the right. <br />
+          ℹ️ No need to click! <br />
+          📊 Once the mourse cursor leaves the canvas area, the tool will convert the mouses trail into data for the charts on the right. <br>
+          <br>
+          The 🟨 yellow area is the start area. Touching it with your mouse will clear the canvas. <br>
+          The 🟥 red area is the random low value area. Drawing here will set random low value points.
         </p>
         <h2>Canvas</h2>
         <canvas
@@ -300,6 +301,8 @@ export default {
           {{ pval_right }}
         </h3>
         <h3>Score (lower is better): {{ this.score }}</h3> -->
+        <h3>⬆️        Histogram        ⬆️</h3>
+        <h3>⬇️ Cumulative Distribution ⬇️</h3>
         <div>
           <BarChart :chartData="lowerChartData" />
         </div>
