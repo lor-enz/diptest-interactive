@@ -31,10 +31,11 @@ def index():
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
 @app.route('/dip-from-histo', methods=['GET', 'CALC', 'KIWI'])
 def dip_from_histo():
-    histo = np.array(request.get_json()) # TODO is np.array(...) required here?
-    randomized_samples = np.array(data_prep.infer_samples_from_histo(histo, standard_offset=0.1))
+    histo = request.get_json()
+    chosen_deviation = 0.35
+    randomized_samples = np.array(data_prep.infer_samples_from_histo(histo, standard_deviation=chosen_deviation))
     actual_samples = np.array(data_prep.infer_samples_from_histo(histo, randomize=False))
-    print(f"Got request with {len(actual_samples)} samples: {actual_samples[:3]} ... ]")
+    print(f"Got request with {len(actual_samples)} samples. Randomized them by standard_deviation={chosen_deviation}")
     if len(randomized_samples) < 8:
         return jsonify({"message": "Array too short"})
     
@@ -46,7 +47,7 @@ def dip_from_histo():
     c = int(actual_samples[modal_triangle[2]])
     mod_tri = [a, b, c]
     g = int(actual_samples[low_high[0]])
-    h = int(actual_samples[low_high[0]])
+    h = int(actual_samples[low_high[1]])
     lo_hi = [g,h]
     json_response = {"dip": dip_value,
                      "pval": pval,
