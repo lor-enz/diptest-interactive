@@ -4,7 +4,7 @@ import numpy as np
 
 def all_dip_calculations(data, is_data_sorted):
     """
-    Almost same function as diptest.dip_test (I'm want to leave the diptest files as is)
+    Almost same function as diptest.dip_test (I want to leave the diptest files as is)
     Modified to get everything in one go: dip_value, pval, modal_triangle, low_high 
     """
     n_points = data.shape[0]
