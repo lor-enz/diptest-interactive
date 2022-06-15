@@ -133,6 +133,7 @@ export default {
         let [x1, y1] = element;
         cleanHistogramData.push(y1);
       });
+
       // Actual CDF (cumulative distribution funciton)
       var cleanCumulativeData = [];
       var totalsum = 0;
@@ -196,9 +197,9 @@ export default {
       const requestOptions = {
         method: "CALC",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(this.cleanCumulativeData),
+        body: JSON.stringify(this.cleanHistogramData),
       };
-      var req_url = `${this.backurl}/dipsplit`;
+      var req_url = `${this.backurl}/dip-from-histo`;
       console.log(
         `fetching from: ${req_url} with method: ${requestOptions["method"]} `
       );
@@ -294,11 +295,11 @@ export default {
         <div>
           <BarChart :chartData="upperChartData" />
         </div>
-        <h3>
+        <!-- <h3>
           Split at: {{ split_index }}, pval_left: {{ pval_left }}, pval_right:
           {{ pval_right }}
         </h3>
-        <h3>Score (lower is better): {{ this.score }}</h3>
+        <h3>Score (lower is better): {{ this.score }}</h3> -->
         <div>
           <BarChart :chartData="lowerChartData" />
         </div>
