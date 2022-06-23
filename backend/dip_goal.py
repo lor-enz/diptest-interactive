@@ -25,16 +25,24 @@ def histogram_and_cdf(unsorted_column, bins=15):
     # TODO choose smart values for bins or range and so on
     # https://numpy.org/doc/stable/reference/generated/numpy.histogram.html
     histo, bins = np.histogram(unsorted_column, bins=bins)
-    cdf = create_cdf(histo)
+    cdf = create_cdf_from_histo(histo)
     return cdf, histo, bins
 
-def create_cdf(histo):
+def create_cdf_from_histo(histo):
     sum = 0
     cdf = []
     for el in histo:
         sum += el
         cdf.append(sum)
     return cdf
+
+def create_ecdf_from_samples(samples):
+    sum = 0
+    ecdf = []
+    for el in samples:
+        sum += el
+        ecdf.append(sum)
+    return ecdf
 
 def goal_function_for(sorted_cdf):
     margin = 4 # >= 4 because that's what the diptest accepts
