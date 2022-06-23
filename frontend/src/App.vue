@@ -52,6 +52,7 @@ export default {
       low_high: "[]",
       modal_triangle: "[]",
       pval: 0,
+      ecdf: [],
     };
   },
 
@@ -209,7 +210,7 @@ export default {
           return response.json();
         })
         .then((data) => {
-          console.log("...with data:", data);
+          // console.log("...with data:", data);
           this.dipResponse = Number(data["dip"]).toFixed(3);
           this.howUnimodalInPercent = this.howUnimodalInPercent = Math.round(
             (1 - this.dipResponse * 4) * 100
@@ -220,6 +221,7 @@ export default {
           this.pval_left = Number(data["dip_left"]).toFixed(4);
           this.pval_right = Number(data["dip_right"]).toFixed(4);
           this.pval = Number(data["pval"]).toFixed(4);
+          this.ecdf = data["ecdf"];
 
           this.score = Number(data["score"]).toFixed(2);
           this.createChartData();
@@ -263,7 +265,7 @@ export default {
     <h1>Diptest Tool</h1>
     <div class="row">
       <div class="column">
-        <h2>How to</h2>
+        <h2 id="how-to-title">How to</h2>
         <p>
           📈 Move your mouse cursor from the left of the canvas to the right. <br />
           ℹ️ No need to click! <br />
@@ -272,7 +274,7 @@ export default {
           The 🟨 yellow area is the start area. Touching it with your mouse will clear the canvas. <br>
           The 🟥 red area is the random low value area. Drawing here will set random low value points.
         </p>
-        <h2>Canvas</h2>
+        <h2 id="canvas-title" >Canvas</h2>
         <canvas
           id="myCanvas"
           width="800"
@@ -284,7 +286,7 @@ export default {
         <div class="row">
           <div class="column">
             <h3 class="centeredparagraph">
-              Dip: {{ dipResponse }}  Pval: {{ pval }}
+              Dip: {{ dipResponse }} (or {{howUnimodalInPercent}}%)  Pval: {{ pval }}
               <br />
               Modal Triangle 🟥 {{ modal_triangle }} - Low high 🟦 {{ low_high }}
             </h3>
@@ -323,6 +325,7 @@ h2 {
   font-family: verdana;
   color: #383838;
   text-align: center;
+  margin: 15px;
 }
 
 h3 {
@@ -358,6 +361,15 @@ p {
   font-size: 7px;
   color: #b5b5b5;
   text-indent: 0px;
+  margin: 1px;
+}
+
+#how-to-title {
+  margin: 1px;
+}
+
+#canvas-title {
+  margin: 20px;
 }
 
 .centeredparagraph {
