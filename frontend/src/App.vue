@@ -1,5 +1,6 @@
 <script>
 import BarChart from "./components/barChart.ts";
+import LineChart from "./components/lineChart.ts";
 const startAreaSize = 7;
 const zeroAreaSize = 20;
 const canvasLineInterval = 17;
@@ -16,6 +17,7 @@ export default {
   name: "DipTestApp",
   components: {
     BarChart,
+    LineChart,
   },
   data() {
     return {
@@ -157,8 +159,8 @@ export default {
       var labels = [...Array(this.cleanHistogramData.length).keys()];
       labels[this.split_index] = "]";
       labels[this.split_index + 1] = "[";
-      this.lowerChartData.labels = labels;
       this.upperChartData.labels = labels;
+      this.lowerChartData.labels = labels;
       // Bar Colors
       var barColors = [];
       var lightgreen = "rgb(136, 149, 66)";
@@ -306,7 +308,7 @@ export default {
         <h3>⬆️        Histogram        ⬆️</h3>
         <h3>⬇️ Cumulative Distribution ⬇️</h3>
         <div>
-          <BarChart :chartData="lowerChartData" />
+          <LineChart :chartData="lowerChartData" />
         </div>
       </div>
     </div>
