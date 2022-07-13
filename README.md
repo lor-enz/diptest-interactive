@@ -19,7 +19,6 @@ Feel free to change the port from 5063 to something else.
 ```
 docker run -d \ 
 -p 5063:5000 \ 
---name diptestbackend \
  nicepenguin/diptestbackend
 ```
 
@@ -34,7 +33,6 @@ Feel free to change the frontend port from 8001 to something else that works for
 ```
 docker run -d \ 
 -p 8001:8080 \ 
---name diptestfrontend \
  nicepenguin/diptestinteractive
 ```
 
