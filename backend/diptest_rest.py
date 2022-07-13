@@ -18,7 +18,7 @@ def after_request(response):
     header['Access-Control-Allow-Headers'] = 'content-type'
     # Other headers can be added here if required
     try: # try except, because sometimes Content-Length is missing.
-        # print out size of reponse in KiB
+        # print out size of response in KiB
         print(f"📏 Content-Length of response: {round(int(header['Content-Length']) /1024,2)} KibiByte")
     except:
         pass
@@ -45,7 +45,7 @@ def dip_from_histo():
     chosen_deviation = 0.2
     randomized_samples = np.array(data_prep.infer_samples_from_histo(histo, standard_deviation=chosen_deviation))
     actual_samples = np.array(data_prep.infer_samples_from_histo(histo, randomize=False))
-    print(f"🧮 Got request with {len(actual_samples)} samples. Randomized them by standard_deviation={chosen_deviation}")
+    print(f"🧮 Created {len(actual_samples)} samples based on the request. Randomized them by standard_deviation={chosen_deviation}")
     if len(randomized_samples) < 8:
         return jsonify({"message": "Array too short"})
     
