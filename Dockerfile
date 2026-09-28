@@ -24,5 +24,10 @@ COPY backend/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY backend/ .
 COPY --from=frontend /frontend/dist /app/frontend/dist
+
+# run as an unprivileged user; the app files stay root-owned and read-only for it
+RUN useradd --system --uid 10001 --no-create-home app
+USER app
+
 EXPOSE 5000
 CMD [ "python3", "diptest_rest.py"]
