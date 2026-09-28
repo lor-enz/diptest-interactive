@@ -11,6 +11,13 @@ import data_prep as data_prep
 FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "dist")
 app = Flask(__name__, static_folder=FRONTEND_DIST, static_url_path='')
 
+# Input limits. Every histogram value becomes that many samples, so unbounded input
+# lets a single request tie up the server. The frontend canvas is 800x500 px and sends
+# one value per drawn column, so real requests stay well below these limits.
+MAX_HISTO_LENGTH = 1000
+MAX_HISTO_VALUE = 600
+app.config['MAX_CONTENT_LENGTH'] = 64 * 1024  # bytes; Flask answers larger bodies with 413
+
 
 
 # Copied from stackoverflow
@@ -48,10 +55,29 @@ def index():
 # weil in der x-Koordinate mehrere Werte drinstecken. Weiß nicht wie du das umrechnest
 
 
+def validate_histo(histo):
+    """Returns an error message if histo is not a list of reasonably sized numbers, else None."""
+    if not isinstance(histo, list):
+        return "Expected a JSON array of numbers"
+    if len(histo) > MAX_HISTO_LENGTH:
+        return f"Array too long (max {MAX_HISTO_LENGTH} values)"
+    for value in histo:
+        # bool is a subclass of int, but true/false are not valid histogram values
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return "Expected a JSON array of numbers"
+        if not 0 <= value <= MAX_HISTO_VALUE:
+            return f"Values must be between 0 and {MAX_HISTO_VALUE}"
+    return None
+
+
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
 @app.route('/api/dip-from-histo', methods=['GET', 'CALC', 'KIWI'])
 def dip_from_histo():
-    histo = request.get_json()
+    histo = request.get_json(silent=True)
+    error = validate_histo(histo)
+    if error:
+        return jsonify({"message": error}), 400
+    histo = [round(value) for value in histo]
     chosen_deviation = 0.2
     randomized_samples = np.array(data_prep.infer_samples_from_histo(histo, standard_deviation=chosen_deviation))
     actual_samples = np.array(data_prep.infer_samples_from_histo(histo, randomize=False))
