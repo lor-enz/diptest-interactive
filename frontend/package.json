@@ -11,14 +11,11 @@
     "serve-prod": "set VUE_APP_API_URL=https://diptool.lorenz.kiwi/api && vue-cli-service serve"
   },
   "dependencies": {
-    "axios": "^0.27.1",
     "chart.js": "^3.7.1",
     "core-js": "3.22.2",
     "typescript": "^4.6.4",
     "vue": "3.2.20",
-    "vue-chartjs": "^4.1.0",
-    "vue-router": "4",
-    "vue3-charts": "1.1.31"
+    "vue-chartjs": "^4.1.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
