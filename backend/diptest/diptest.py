@@ -48,7 +48,7 @@ def dip(X, just_dip=True, is_data_sorted=False, use_c=True, debug=False):
         X = np.asarray(X, dtype=np.float64)
         X_c = X.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         N_c = np.array([N]).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        dip_value = np.zeros(1, dtype=np.float).ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        dip_value = np.zeros(1, dtype=np.float64).ctypes.data_as(ctypes.POINTER(ctypes.c_double))
         low_high = np.zeros(4).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         modal_triangle = np.zeros(3).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         gcm = np.zeros(N).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
