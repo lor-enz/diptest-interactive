@@ -26,14 +26,42 @@ docker run -d \
 
 Feel free to change the frontend port from 8001 to something else that works for your setup. 
 
-~~Change the VUE_APP_API_URL environment variable to the location of your backendserver.~~
+The frontend expects the backend at `/api` on the same domain. Put both containers behind a reverse proxy that forwards `/api/*` to the backend (with the `/api` prefix stripped) and everything else to the frontend. See [Reverse proxy](#reverse-proxy) below.
 
-**Unfortunately the backend URL is hard set to '_dipapi.lorenz.kiwi_'. Changing the API requires changing the dockerfile and running docker build again.**
+To point the frontend somewhere else, rebuild it with `docker build --build-arg VUE_APP_API_URL=https://your-backend.example .` (the URL is baked in at build time).
 
 ```
 docker run -d \ 
 -p 8001:8080 \ 
  nicepenguin/diptestinteractive
+```
+
+### Reverse proxy
+
+Example nginx config (as used with [SWAG](https://github.com/linuxserver/docker-swag)), assuming the containers are named `dipfront` and `dipback`:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name diptool.*;
+    include /config/nginx/ssl.conf;
+    client_max_body_size 0;
+
+    location /api/ {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app dipback;
+        rewrite ^/api/(.*)$ /$1 break;
+        proxy_pass http://$upstream_app:5000;
+    }
+
+    location / {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app dipfront;
+        proxy_pass http://$upstream_app:8080;
+    }
+}
 ```
 
 ## Project setup for development

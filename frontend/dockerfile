@@ -10,8 +10,11 @@ RUN npm install -g http-server
 # make the 'app' folder the current working directory
 WORKDIR /app
 
-# Set env variable
-ENV VUE_APP_API_URL='https://dipapi.lorenz.kiwi/'
+# API location, baked in at build time. Relative, so the reverse proxy serves
+# the backend under /api on the same domain as the frontend.
+# Override with: docker build --build-arg VUE_APP_API_URL=https://example.com/api .
+ARG VUE_APP_API_URL=/api
+ENV VUE_APP_API_URL=$VUE_APP_API_URL
 
 # copy 'package.json' and 'yarn.lock'
 COPY package.json yarn.lock ./
