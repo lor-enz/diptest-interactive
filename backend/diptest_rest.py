@@ -1,10 +1,15 @@
 from dip_goal import goal_function_for, all_dip_calculations, create_ecdf_from_samples
 from posixpath import split
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, send_from_directory
+import os
 import numpy as np
 import diptest.diptest as dt
 import data_prep as data_prep
-app = Flask(__name__)
+
+# The built Vue frontend (frontend/dist) is served as static files from the root path.
+# The docker image copies it there; locally it only exists after running 'yarn build'.
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "dist")
+app = Flask(__name__, static_folder=FRONTEND_DIST, static_url_path='')
 
 
 
@@ -25,9 +30,14 @@ def after_request(response):
     return response
 
 
-# Main page / Homepage / index
+# Frontend
 @app.route('/')
-@app.route('/index')
+def frontend():
+    return send_from_directory(FRONTEND_DIST, 'index.html')
+
+
+# API explanation page
+@app.route('/api/')
 def index():
     logger.info("Serving explanation.html")
     return render_template('explanation.html', title='Home')
@@ -39,7 +49,7 @@ def index():
 
 
 # allow CALC and KIWI methods, because javascript won't allow adding JSON to a GET
-@app.route('/dip-from-histo', methods=['GET', 'CALC', 'KIWI'])
+@app.route('/api/dip-from-histo', methods=['GET', 'CALC', 'KIWI'])
 def dip_from_histo():
     histo = request.get_json()
     chosen_deviation = 0.2
