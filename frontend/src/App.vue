@@ -255,7 +255,8 @@ export default {
     this.clear();
     console.log("--------------MOUNTED--------------");
     this.backurl = process.env.VUE_APP_API_URL.trim();
-    if (!this.backurl.startsWith("http")) {
+    // relative URLs (e.g. "/api") point at the same origin and stay as they are
+    if (!this.backurl.startsWith("http") && !this.backurl.startsWith("/")) {
       this.backurl = `http://${this.backurl}`;
     }
   },
