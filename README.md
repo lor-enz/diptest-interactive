@@ -8,37 +8,23 @@ The results (dip_value, p_value, modal_triangle, low_high) are displayed plus so
 It's readily available at [diptool.lorenz.kiwi](https://diptool.lorenz.kiwi/). 
 
 
-## Docker Containers - The easy way of running it yourself. 
+## Docker Container - The easy way of running it yourself. 
 
-There is a frontend and a backend image, which are run separately.
-
-### Backend
+A single image contains both the frontend and the backend. The Flask backend serves the app at `/` and the API under `/api` (e.g. `/api/dip-from-histo`).
 
 Feel free to change the port from 5063 to something else.
 
 ```
-docker run -d \ 
--p 5063:5000 \ 
- nicepenguin/diptestbackend
-```
-
-### Frontend
-
-Feel free to change the frontend port from 8001 to something else that works for your setup. 
-
-The frontend expects the backend at `/api` on the same domain. Put both containers behind a reverse proxy that forwards `/api/*` to the backend (with the `/api` prefix stripped) and everything else to the frontend. See [Reverse proxy](#reverse-proxy) below.
-
-To point the frontend somewhere else, rebuild it with `docker build --build-arg VUE_APP_API_URL=https://your-backend.example .` (the URL is baked in at build time).
-
-```
-docker run -d \ 
--p 8001:8080 \ 
+docker run -d \
+-p 5063:5000 \
  nicepenguin/diptestinteractive
 ```
 
+Then open http://localhost:5063.
+
 ### Reverse proxy
 
-Example nginx config (as used with [SWAG](https://github.com/linuxserver/docker-swag)), assuming the containers are named `dipfront` and `dipback`:
+Example nginx config (as used with [SWAG](https://github.com/linuxserver/docker-swag)), assuming the container is named `diptool`:
 
 ```nginx
 server {
@@ -47,19 +33,11 @@ server {
     include /config/nginx/ssl.conf;
     client_max_body_size 0;
 
-    location /api/ {
-        include /config/nginx/proxy.conf;
-        include /config/nginx/resolver.conf;
-        set $upstream_app dipback;
-        rewrite ^/api/(.*)$ /$1 break;
-        proxy_pass http://$upstream_app:5000;
-    }
-
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        set $upstream_app dipfront;
-        proxy_pass http://$upstream_app:8080;
+        set $upstream_app diptool;
+        proxy_pass http://$upstream_app:5000;
     }
 }
 ```
@@ -78,7 +56,7 @@ yarn lint
 yarn serve
 ```
 
-```yarn serve``` uses the .env file as supplier for the API url. .env defines localhost as the URL environment variable
+```yarn serve``` uses the .env file as supplier for the API url. .env points to the local backend at http://localhost:5000/api
 
 
 ```yarn serve-prod``` is a custom command, defined in package.json. There it overwrites the VUE_APP_API_URL environment variable before running yarn serve.
@@ -90,22 +68,19 @@ Navigate to the backend folder, here you can run
 ```
 python diptest_rest.py
 ``` 
-The Server will always run on port 5000.
+The Server will always run on port 5000. It also serves the frontend at http://localhost:5000, if it was built with ```yarn build``` beforehand.
 
-### Building the docker images
+### Building the docker image
 
-Navigate to **frontend** folder and run this command (with docker daemon running)
+Run this command in the **root** folder (with docker daemon running)
 
 ```docker build -t diptestinteractive .``` 
 
-Navigate to **backend** folder and run this command (with docker daemon running)
-
-```docker build -t diptestbackend .``` 
+The API URL the frontend uses is baked in at build time and defaults to `/api`. To point it somewhere else, add `--build-arg VUE_APP_API_URL=https://your-backend.example/api`.
 
 This is a personal note to myself: 
-These are the commmands to get the right tags to upload them to the docker hub.
+This is the command to get the right tag to upload it to the docker hub.
 ```
 docker build -t nicepenguin/diptestinteractive .
-docker build -t nicepenguin/diptestbackend .
 ``` 
 This only works for myself.
