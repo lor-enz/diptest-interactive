@@ -18,7 +18,7 @@ COPY frontend/ .
 RUN yarn build
 
 # --- Stage 2: Flask backend serving API and built frontend ---
-FROM python:3.13-slim
+FROM python:3.14-slim
 WORKDIR /app/backend
 COPY backend/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
