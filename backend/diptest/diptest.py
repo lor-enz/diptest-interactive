@@ -56,8 +56,6 @@ def dip_python_port(X, just_dip=False, is_data_sorted=False, debug=False):
     modaltriangle_i1 = None
     modaltriangle_i2 = None
     modaltriangle_i3 = None
-    best_low = None
-    best_high = None
 
     # Establish the indices mn[1..n] over which combination is necessary for the convex MINORANT (GCM) fit.
     mn = np.zeros(N, dtype=int)
@@ -217,8 +215,6 @@ def dip_python_port(X, just_dip=False, is_data_sorted=False, debug=False):
                                                                                                       gcm_modalTriangle_i3))
         if dip_value < dip_new:
             dip_value = dip_new
-            best_low = gcm[ig]
-            best_high = lcm[ih]
             if dip_u > dip_l:
                 modaltriangle_i1 = lcm_modalTriangle_i1
                 modaltriangle_i2 = j_best
@@ -235,9 +231,10 @@ def dip_python_port(X, just_dip=False, is_data_sorted=False, debug=False):
         low = gcm[ig]
         high = lcm[ih]
     dip_value /= (2 * N)
-    # TODO: Better with best low best high?
+    # The modal interval is where the iterations end, as in Hartigan's AS 217 (XL, XU) and
+    # R's diptest. The interval of the iteration that found the largest dip can be wider.
     return dip_value if just_dip else (
-        dip_value, (best_low, best_high), (modaltriangle_i1, modaltriangle_i2, modaltriangle_i3))
+        dip_value, (low, high), (modaltriangle_i1, modaltriangle_i2, modaltriangle_i3))
 
 
 def dip_test(X, is_data_sorted=False, pval_strategy=PVAL_BY_TABLE, n_boots=2000, debug=False):
