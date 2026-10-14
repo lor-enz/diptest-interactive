@@ -1,8 +1,7 @@
 # Single image: builds the Vue frontend, then serves it together with the Flask API.
 
 # --- Stage 1: build the frontend ---
-# Pinned: the Vue CLI toolchain in yarn.lock does not support newer Node versions
-FROM node:16-alpine AS frontend
+FROM node:22-alpine AS frontend
 WORKDIR /frontend
 
 # API location, baked in at build time. Relative, because the backend serves
@@ -18,10 +17,10 @@ COPY frontend/ .
 RUN yarn build
 
 # --- Stage 2: Flask backend serving API and built frontend ---
-FROM python:3.13-slim
+FROM python:3.14-slim
 WORKDIR /app/backend
 COPY backend/requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 COPY backend/ .
 COPY --from=frontend /frontend/dist /app/frontend/dist
 

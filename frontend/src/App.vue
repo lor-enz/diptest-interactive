@@ -254,7 +254,7 @@ export default {
     this.canvas = this.canv.getContext("2d");
     this.clear();
     console.log("--------------MOUNTED--------------");
-    this.backurl = process.env.VUE_APP_API_URL.trim();
+    this.backurl = import.meta.env.VUE_APP_API_URL.trim();
     // relative URLs (e.g. "/api") point at the same origin and stay as they are
     if (!this.backurl.startsWith("http") && !this.backurl.startsWith("/")) {
       this.backurl = `http://${this.backurl}`;
