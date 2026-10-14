@@ -9,10 +9,6 @@ const colorblind_friendly_palette = {
   orange: "230,159,0", // ???
 };
 
-function randomIntFromInterval(min, max) {
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
 export default {
   name: "DipTestApp",
   components: {
@@ -75,7 +71,7 @@ export default {
           Math.round(offsetX / canvasLineInterval) * canvasLineInterval;
         var newY =
           offsetY >= this.canv.height - zeroAreaSize
-            ? randomIntFromInterval(this.canv.height - 4, this.canv.height)
+            ? this.canv.height // the bottom strip draws bars of height 0
             : Math.round(offsetY);
         this.drawLine(this.x, this.y, newX, newY);
         this.x = newX;
@@ -246,7 +242,7 @@ export default {
       <p class="howto">
         📈 Move the mouse across the canvas from left to right, no click needed.
         The test runs when the cursor leaves the canvas.
-        🟨 The start strip clears the canvas, 🟥 the bottom strip draws random low values.
+        🟨 The start strip clears the canvas, 🟥 the bottom strip draws zeros.
       </p>
     </header>
 
