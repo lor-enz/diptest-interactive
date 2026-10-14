@@ -7,6 +7,9 @@
     Each value represents one column in a barchart that represents the histogram. The order will match the order of the columns.
     The values are read as the shape of a density, not as counts: the dip test runs on an ideal sample of n points placed at
     the shape's quantiles. Pick n with the query parameter <code>?n=</code> (10 to 5000, default 200); it only changes the p-value noticeably.
+    <code>pval</code> is the p-value of that ideal sample. It has no sampling noise, so it is not what a real sample of n
+    would get. <code>typical_pval</code> is the median p-value of 100 random samples of n drawn from the shape, and
+    <code>power</code> is the share of them with p &lt; 0.05.
     Check https://github.com/lor-enz/diptest_interactive for more info. </p>
 
 

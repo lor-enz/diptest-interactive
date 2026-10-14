@@ -4,6 +4,8 @@ A website / web application that offers a way to to explore and play around with
 ([Hartigan & Hartigan 1985, *The Dip Test of Unimodality*](https://doi.org/10.1214/aos/1176346577)).
 First "draw" a barchart. It is read as the shape of a distribution (a density), not as counts. The Hartigan Diptest is applied to an ideal sample of n points placed exactly along that shape; n can be picked and only really affects the p-value.
 
+That ideal sample has no sampling noise, so its p-value is not what a real sample of n points would get: noise adds to a real sample's dip, and for a faint dip the difference is large. The tool therefore also shows a **typical p-value**, the median over 100 random samples of n drawn from the shape, and how often those samples reach p < 0.05 (the test's power).
+
 The results (dip value, p-value, modal triangle, low/high) are shown on the histogram and on the sample's empirical cumulative distribution function (ECDF):
 
 - **Modal interval** (low, high): the shaded band.

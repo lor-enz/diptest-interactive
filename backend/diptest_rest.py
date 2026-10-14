@@ -1,4 +1,4 @@
-from dip_goal import all_dip_calculations
+from dip_goal import all_dip_calculations, typical_sample_pvals
 from posixpath import split
 from flask import Flask, jsonify, request, render_template, send_from_directory
 import os
@@ -18,6 +18,7 @@ MAX_HISTO_VALUE = 600
 # The drawing is a density, not a sample. The dip test runs on an ideal sample of
 # n points placed at the drawing's quantiles; n only matters for the p-value.
 # The p-value table ends at n = 72000, and the dip calculation is O(n) in Python.
+# The typical p-value repeats it on random samples, ~1.5 s in total at n = 5000.
 DEFAULT_SAMPLE_SIZE = 200
 MIN_SAMPLE_SIZE = 10
 MAX_SAMPLE_SIZE = 5000
@@ -86,6 +87,7 @@ def dip_from_histo():
     samples = data_prep.quantile_samples_from_histo(histo, n)
 
     dip_value, pval, modal_triangle, low_high = all_dip_calculations(data=samples, is_data_sorted=True)
+    typical_pval, power = typical_sample_pvals(histo, n)
 
     # bar i covers [i, i+1), so a sample's bar is its integer part
     bar_of = lambda index: int(samples[index]) if index is not None else None
@@ -100,7 +102,11 @@ def dip_from_histo():
         triangle_index, triangle_side = None, None
 
     json_response = {"dip": dip_value,
-                     "pval": pval,
+                     "pval": pval,  # of the ideal sample, which has no sampling noise
+                     # over random samples of n from the drawn shape: median p-value and
+                     # share of samples with p < 0.05
+                     "typical_pval": typical_pval,
+                     "power": power,
                      "n": n,
                      "low_high": lo_hi,
                      "modal_triangle": mod_tri,
