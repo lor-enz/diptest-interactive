@@ -67,10 +67,10 @@ server {
 There is a frontend and a backend. both in separate folders. 
 
 ### Frontend development
-The frontend is a Vue 3 application built with [Vite](https://vite.dev). You will find html, javascript, typescript and Vue specific code here. It needs Node 22.12 or newer.
+The frontend is a Vue 3 application built with [Vite](https://vite.dev). You will find html, javascript, typescript and Vue specific code here. It needs Node 22.12 or newer and Yarn v1, which newer Node versions no longer include (`npm install --global yarn@1.22.22`).
 Navigate to the frontend folder and use the familiar yarn commands. I guess you could also use _npm_, but that isn't tested.
 ```
-yarn install
+yarn install --frozen-lockfile
 yarn build
 yarn lint
 yarn serve
@@ -79,16 +79,19 @@ yarn serve
 ```yarn serve``` starts the Vite dev server on http://localhost:8080 and uses the .env file as supplier for the API url. .env points to the local backend at http://localhost:5000/api
 
 
-```yarn serve-prod``` does the same, but takes the API url from .env.prodapi, which points at the live backend at https://diptool.lorenz.kiwi/api.
+```yarn serve-prod``` does the same, but takes the API url from .env.prodapi, which points at the live backend at https://diptool.lorenz.kiwi/api. Frontend changes that need new API fields only work there once the backend with those fields is deployed.
 
 
 ### Backend development
-The backend is a Flask Server. You will find python code here.
-Navigate to the backend folder, here you can run 
+The backend is a Flask Server. You will find python code here. It needs Python 3.13 or newer (the Docker image uses 3.14).
+Navigate to the backend folder, install the dependencies into a virtual environment once, then start the server:
 ```
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 python diptest_rest.py
 ``` 
-The Server will always run on port 5000. It also serves the frontend at http://localhost:5000, if it was built with ```yarn build``` beforehand.
+Start it with `python diptest_rest.py`, not `flask run`; the `/api/` page relies on the logger set up there. The Server will always run on port 5000. It also serves the frontend at http://localhost:5000, if it was built with ```yarn build``` beforehand.
 
 ### Building the docker image
 
