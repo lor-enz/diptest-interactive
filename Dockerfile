@@ -1,7 +1,7 @@
 # Single image: builds the Vue frontend, then serves it together with the Flask API.
 
 # --- Stage 1: build the frontend ---
-FROM node:22-alpine AS frontend
+FROM node:26-alpine AS frontend
 WORKDIR /frontend
 
 # API location, baked in at build time. Relative, because the backend serves
