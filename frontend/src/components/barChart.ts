@@ -65,7 +65,8 @@ export default defineComponent({
       scales: {
         x: {
           ticks: {
-            autoSkip: false
+            autoSkip: true,
+            maxRotation: 0
           },
           grid: {
             display: false,
