@@ -66,7 +66,7 @@ def dip(X, just_dip=True, is_data_sorted=False, use_c=True, debug=False):
             modal_triangle = (modal_triangle[0], modal_triangle[1], modal_triangle[2])
             return dip_value, low_high, modal_triangle
     else:
-        return dip_python_port(X, just_dip, debug)
+        return dip_python_port(X, just_dip, debug=debug)
 
 
 def load_c_dip_file():
