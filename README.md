@@ -1,9 +1,14 @@
 # Interactive Diptest
 
-A website / web application that offers a way to to explore and play around with the Hartigan diptest.
-First "draw" a barchart. That barchart represents a histogram for data that could exist. The Hartigan Diptest is applied to a possible data set that would match histogram (the drawn barchart). The application also creates a cumulative distribution function based on the histogram.
+A website / web application that offers a way to to explore and play around with the Hartigan diptest
+([Hartigan & Hartigan 1985, *The Dip Test of Unimodality*](https://doi.org/10.1214/aos/1176346577)).
+First "draw" a barchart. It is read as the shape of a distribution (a density), not as counts. The Hartigan Diptest is applied to an ideal sample of n points placed exactly along that shape; n can be picked and only really affects the p-value.
 
-The results (dip_value, p_value, modal_triangle, low_high) are displayed plus some info on my own experimental shenanigans. 
+The results (dip value, p-value, modal triangle, low/high) are shown on the histogram and on the sample's empirical cumulative distribution function (ECDF):
+
+- **Modal interval** (low, high): the shaded band.
+- **Modal triangle**: a chord of the convex minorant (left of the modal interval) or concave majorant (right of it) and the ECDF point furthest from it. The gap is exactly 2·dip.
+- **Race track**: walls at ECDF ± a half-width. The racing line is the shortest path through the track. Turning left means the distribution gets denser, turning right means it thins out, so every switch from left to right is a mode. The dip is half the width of the narrowest track whose racing line has only one mode; a slider shows how narrower tracks force more modes.
 
 It's readily available at [diptool.lorenz.kiwi](https://diptool.lorenz.kiwi/). 
 
