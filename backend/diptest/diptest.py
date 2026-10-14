@@ -18,19 +18,13 @@ Dario Ringach <dario@wotan.cns.nyu.edu>, Martin Maechler <maechler@stat.math.eth
 """
 
 import numpy as np
-import os
-import platform
-import ctypes
 
 PVAL_BY_TABLE = 0
 PVAL_BY_BOOT = 1
 PVAL_BY_FUNCTION = 2
 
-CAN_C_BE_USED = True
-C_DIP_FILE = None
 
-def dip(X, just_dip=True, is_data_sorted=False, use_c=True, debug=False):
-    global CAN_C_BE_USED
+def dip(X, just_dip=True, is_data_sorted=False, debug=False):
     assert X.ndim == 1, "Data must be 1-dimensional for the dip-test. Your shape:{0}".format(X.shape)
     assert just_dip or is_data_sorted == True, "Data must be sorted if low-high tuple and/or modal triangle should be returned (else indices will not match)"
     N = len(X)
@@ -43,70 +37,7 @@ def dip(X, just_dip=True, is_data_sorted=False, use_c=True, debug=False):
         # Why would it be FOUR here? So let's yeet the last (boolean) one. 
         return 0.0 if just_dip else (0.0, (0, N-1), None, ) # True)
         # Edited by Lorenz END
-    if use_c and load_c_dip_file():
-        # Prepare data to match C data types
-        X = np.asarray(X, dtype=np.float64)
-        X_c = X.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        N_c = np.array([N]).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        dip_value = np.zeros(1, dtype=np.float64).ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-        low_high = np.zeros(4).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        modal_triangle = np.zeros(3).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        gcm = np.zeros(N).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        lcm = np.zeros(N).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        mn = np.zeros(N).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        mj = np.zeros(N).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        debug_c = np.array([1 if debug else 0]).ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        # Execute C dip test
-        _ = C_DIP_FILE.diptst(X_c, N_c, dip_value, low_high, modal_triangle, gcm, lcm, mn, mj, debug_c)
-        dip_value = dip_value[0]
-        if just_dip:
-            return dip_value
-        else:
-            low_high = (low_high[2], low_high[3])
-            modal_triangle = (modal_triangle[0], modal_triangle[1], modal_triangle[2])
-            return dip_value, low_high, modal_triangle
-    else:
-        return dip_python_port(X, just_dip, debug=debug)
-
-
-def load_c_dip_file():
-    global C_DIP_FILE
-    global CAN_C_BE_USED
-    if CAN_C_BE_USED and C_DIP_FILE is None:
-        files_path = os.path.dirname(__file__)
-        if platform.system() == "Windows":
-            dip_compiled = files_path + "/dip.dll"
-        else:
-            dip_compiled = files_path + "/dip.so"
-        if os.path.isfile(dip_compiled):
-            # load c file
-            try:
-                C_DIP_FILE = ctypes.CDLL(dip_compiled)
-                C_DIP_FILE.diptst.restype = None
-                C_DIP_FILE.diptst.argtypes = [ctypes.POINTER(ctypes.c_double),
-                                         ctypes.POINTER(ctypes.c_int),
-                                         ctypes.POINTER(ctypes.c_double),
-                                         ctypes.POINTER(ctypes.c_int),
-                                         ctypes.POINTER(ctypes.c_int),
-                                         ctypes.POINTER(ctypes.c_int),
-                                         ctypes.POINTER(ctypes.c_int),
-                                         ctypes.POINTER(ctypes.c_int),
-                                         ctypes.POINTER(ctypes.c_int),
-                                         ctypes.POINTER(ctypes.c_int)]
-                return True
-            except Exception as e:
-                print("[WARNING] C implementation can not be used for dip calculation.")
-                print(e)
-                CAN_C_BE_USED = False
-                return False
-        else:
-            print("[WARNING] C implementation can not be used for dip calculation.")
-            CAN_C_BE_USED = False
-            return False
-    elif CAN_C_BE_USED:
-        return True
-    else:
-        return False
+    return dip_python_port(X, just_dip, debug=debug)
 
 
 def dip_python_port(X, just_dip=False, is_data_sorted=False, debug=False):
@@ -309,7 +240,7 @@ def dip_python_port(X, just_dip=False, is_data_sorted=False, debug=False):
         dip_value, (best_low, best_high), (modaltriangle_i1, modaltriangle_i2, modaltriangle_i3))
 
 
-def dip_test(X, is_data_sorted=False, pval_strategy=PVAL_BY_TABLE, n_boots=2000, use_c=True, debug=False):
+def dip_test(X, is_data_sorted=False, pval_strategy=PVAL_BY_TABLE, n_boots=2000, debug=False):
     """
     Hartigan & Hartigan's dip test for unimodality.
     For X ~ F i.i.d., the null hypothesis is that F is a unimodal distribution.
@@ -336,7 +267,7 @@ def dip_test(X, is_data_sorted=False, pval_strategy=PVAL_BY_TABLE, n_boots=2000,
         The Annals of Statistics.
     """
     n_points = X.shape[0]
-    data_dip = dip(X, just_dip=True, is_data_sorted=is_data_sorted, use_c=use_c, debug=debug)
+    data_dip = dip(X, just_dip=True, is_data_sorted=is_data_sorted, debug=debug)
     pval = dip_pval(data_dip, n_points, pval_strategy, n_boots)
     return data_dip, pval
 
