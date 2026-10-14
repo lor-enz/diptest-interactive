@@ -45,6 +45,7 @@ export default {
       pval: 0, // p-value of the ideal sample
       typicalPval: 0, // median p-value of random samples of n from the drawing
       power: 0, // share of those random samples with p < 0.05
+      dipAtFloor: false, // dip is 1/(2n): modal interval and triangle are arbitrary, so hidden
       result: null, // last successful response, drives the ECDF chart
     };
   },
@@ -141,12 +142,12 @@ export default {
       var red = "rgb(227, 98, 128)";
       var blue = "rgb(56, 182, 217)";
       var barColors = this.cleanHistogramData.map(() => lightgreen);
-      if (Array.isArray(this.low_high)) {
+      if (Array.isArray(this.low_high) && !this.dipAtFloor) {
         for (let bar = this.low_high[0]; bar <= this.low_high[1]; bar++) {
           barColors[bar] = blue;
         }
       }
-      if (Array.isArray(this.modal_triangle)) {
+      if (Array.isArray(this.modal_triangle) && !this.dipAtFloor) {
         this.modal_triangle.forEach((bar) => (barColors[bar] = red));
       }
       this.upperChartData.datasets[0].backgroundColor = barColors;
@@ -182,12 +183,13 @@ export default {
           this.pval = Number(data["pval"]).toFixed(4);
           this.typicalPval = Number(data["typical_pval"]).toFixed(4);
           this.power = `${Math.round(100 * data["power"])} %`;
+          this.dipAtFloor = data["dip_at_floor"];
           this.result = {
             samples: data["samples"],
             xMax: this.cleanHistogramData.length,
             dip: data["dip"],
-            lowHighIndex: data["low_high_index"],
-            triangleIndex: data["modal_triangle_index"],
+            lowHighIndex: this.dipAtFloor ? null : data["low_high_index"],
+            triangleIndex: this.dipAtFloor ? null : data["modal_triangle_index"],
             triangleSide: data["modal_triangle_side"],
           };
           this.createChartData();
@@ -203,6 +205,7 @@ export default {
       this.pval = "err";
       this.typicalPval = "err";
       this.power = "err";
+      this.dipAtFloor = false;
       this.modal_triangle = "err";
       this.low_high = "err";
       this.result = null;
@@ -263,8 +266,15 @@ export default {
               <br />
               Typical sample: Pval {{ typicalPval }} - significant in {{ power }}
               <br />
-              Modal Triangle 🟥 {{ modal_triangle }} - Low high 🟦 {{ low_high }}
+              <template v-if="!dipAtFloor">
+                Modal Triangle 🟥 {{ modal_triangle }} - Low high 🟦 {{ low_high }}
+              </template>
             </h3>
+            <p v-if="dipAtFloor">
+              The dip is 1/(2·{{ n }}), the smallest dip any {{ n }} points can have: half of
+              one step of the ECDF. As far as {{ n }} points can tell, your shape is unimodal.
+              Every step ties for the modal triangle, so neither it nor a modal interval is shown.
+            </p>
             <p>
               Your drawing is read as the <b>shape</b> of a distribution, not as counts.
               The test runs on an ideal sample of

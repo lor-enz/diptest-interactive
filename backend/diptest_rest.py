@@ -88,6 +88,9 @@ def dip_from_histo():
 
     dip_value, pval, modal_triangle, low_high = all_dip_calculations(data=samples, is_data_sorted=True)
     typical_pval, power = typical_sample_pvals(histo, n)
+    # No set of n points has a dip below 1/(2n), half an ECDF step. At that floor every step
+    # ties for the modal triangle, so the triangle and modal interval are arbitrary picks.
+    at_floor = bool(2 * n * dip_value <= 1 + 1e-9)
 
     # bar i covers [i, i+1), so a sample's bar is its integer part
     bar_of = lambda index: int(samples[index]) if index is not None else None
@@ -108,6 +111,7 @@ def dip_from_histo():
                      "typical_pval": typical_pval,
                      "power": power,
                      "n": n,
+                     "dip_at_floor": at_floor,
                      "low_high": lo_hi,
                      "modal_triangle": mod_tri,
                      # sample positions and indices into them, for drawing the ECDF

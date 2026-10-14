@@ -10,6 +10,7 @@ The results (dip value, p-value, modal triangle, low/high) are shown on the hist
 
 - **Modal interval** (low, high): the shaded band.
 - **Modal triangle**: a chord of the convex minorant (left of the modal interval) or concave majorant (right of it) and the ECDF point furthest from it. The gap is exactly 2·dip.
+- If the dip is 1/(2n), the smallest any n points can have, the shape looks unimodal and every ECDF step ties for the modal triangle. The modal interval and triangle are then not shown.
 - **Race track**: walls at ECDF ± a half-width. The racing line is the shortest path through the track. Turning left means the distribution gets denser, turning right means it thins out, so every switch from left to right is a mode. The dip is half the width of the narrowest track whose racing line has only one mode; a slider shows how narrower tracks force more modes.
 
 It's readily available at [diptool.lorenz.kiwi](https://diptool.lorenz.kiwi/). 
