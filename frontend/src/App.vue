@@ -116,10 +116,19 @@ export default {
 
       if (this.points.length === 0) {
         this.points.push([newX, newY]);
-        wasPointAdded = true;
+        return true;
       }
       var [lastX, lastY] = this.points[this.points.length - 1];
-      if (lastX !== newX) {
+      if (lastX === newX) {
+        // still in the same column: the bar follows the cursor
+        this.points[this.points.length - 1] = [newX, newY];
+      } else {
+        // a fast mouse can jump over columns; fill them in along the drawn line
+        // instead of dropping them, which would squeeze the x-axis together
+        for (let x = lastX + canvasLineInterval; x < newX; x += canvasLineInterval) {
+          const fraction = (x - lastX) / (newX - lastX);
+          this.points.push([x, Math.round(lastY + fraction * (newY - lastY))]);
+        }
         this.points.push([newX, newY]);
         wasPointAdded = true;
       }
