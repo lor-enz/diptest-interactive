@@ -2,7 +2,7 @@
 
 A website / web application that offers a way to to explore and play around with the Hartigan diptest
 ([Hartigan & Hartigan 1985, *The Dip Test of Unimodality*](https://doi.org/10.1214/aos/1176346577)).
-First "draw" a barchart. It is read as the shape of a distribution (a density), not as counts. The Hartigan Diptest is applied to an ideal sample of n points placed exactly along that shape; n can be picked and only really affects the p-value.
+First "draw" a barchart. It is read as the shape of a distribution (a density), not as counts. The Hartigan Diptest is applied to an ideal sample of n points placed exactly along that shape; n can be picked and only really affects the p-value: the sample's dip is within 1/(2n) of the shape's own dip, so n moves the dip only when it is small.
 
 That ideal sample has no sampling noise, so its p-value is not what a real sample of n points would get: noise adds to a real sample's dip, and for a faint dip the difference is large. The tool therefore also shows a **typical p-value**, the median over 100 random samples of n drawn from the shape, and how often those samples reach p < 0.05 (the test's power).
 
