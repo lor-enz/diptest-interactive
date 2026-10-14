@@ -1,5 +1,8 @@
-# Dependabot version updates, tuned for low maintenance:
-# checks monthly and groups updates into one PR per ecosystem.
+# Dependabot, tuned for low maintenance:
+# - version updates: checked monthly, minor + patch grouped into one PR per ecosystem,
+#   major versions come as separate PRs (they may need code changes)
+# - security updates: opened as soon as an advisory is published, also grouped,
+#   so a batch of advisories means one PR instead of ten
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
@@ -10,8 +13,13 @@ updates:
     schedule:
       interval: "monthly"
     groups:
-      python:
+      python-security:
+        applies-to: security-updates
         patterns: ["*"]
+      python:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # Frontend packages (frontend/package.json + yarn.lock)
   - package-ecosystem: "npm"
@@ -19,23 +27,19 @@ updates:
     schedule:
       interval: "monthly"
     groups:
+      frontend-security:
+        applies-to: security-updates
+        patterns: ["*"]
       frontend:
+        applies-to: version-updates
         patterns: ["*"]
         update-types: ["minor", "patch"]
-    ignore:
-      # Major versions need the Vue CLI -> Vite migration first
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
 
   # Base images in the root Dockerfile (node, python)
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "monthly"
-    ignore:
-      # The Vue CLI toolchain only builds on Node <= 16
-      - dependency-name: "node"
-        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used in .github/workflows
   - package-ecosystem: "github-actions"

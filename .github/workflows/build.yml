@@ -1,0 +1,87 @@
+# Lints and builds the frontend, builds the Docker image and smoke-tests it.
+#
+# - Pull requests (including Dependabot's): check only, nothing is pushed.
+# - Pushes to main, the weekly schedule and manual runs: also push the image to
+#   Docker Hub as nicepenguin/diptestinteractive:latest (+ a commit tag).
+#   The weekly run rebuilds from scratch, so fixes in the python base image and
+#   in Flask/Werkzeug/numpy (unpinned minimums in requirements.txt) get picked up
+#   even when nothing in this repo changed. Saturn's daily update check then
+#   deploys the new image.
+#
+# Needs two repository secrets (Settings -> Secrets and variables -> Actions):
+#   DOCKERHUB_USERNAME  your Docker Hub user (nicepenguin)
+#   DOCKERHUB_TOKEN     a Docker Hub access token with Read & Write scope
+
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 3 * * 1" # Mondays 03:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: nicepenguin/diptestinteractive
+
+jobs:
+  frontend:
+    name: Frontend lint & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn build
+
+  image:
+    name: Docker image
+    runs-on: ubuntu-latest
+    needs: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build image
+        # --pull and --no-cache: always start from the newest base images and
+        # reinstall the Python packages, so security fixes are never skipped.
+        run: docker build --pull --no-cache -t "$IMAGE:latest" -t "$IMAGE:${GITHUB_SHA::7}" .
+
+      - name: Smoke test
+        run: |
+          docker run -d --name diptool -p 5000:5000 "$IMAGE:latest"
+          for i in $(seq 1 30); do curl -sf http://localhost:5000/ >/dev/null && break; sleep 1; done
+          curl -sf http://localhost:5000/ | grep -q '<div id="app">'
+          curl -sf http://localhost:5000/api/ >/dev/null
+          curl -sf -X CALC -H 'content-type: application/json' \
+            -d '[0,5,20,40,20,5,0,0,5,20,40,20,5,0]' \
+            http://localhost:5000/api/dip-from-histo | grep -q '"dip"'
+          echo "Smoke test passed"
+
+      - name: Show container logs
+        if: always()
+        run: docker logs diptool || true
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${GITHUB_SHA::7}"
