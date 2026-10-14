@@ -279,9 +279,6 @@ export default {
           one step of the ECDF. As far as {{ n }} points can tell, your shape is unimodal.
           Every step ties for the modal triangle, so neither it nor a modal interval is shown.
         </p>
-        <p v-else class="note">
-          Modal triangle 🟥 {{ modal_triangle }} · Modal interval 🟦 {{ low_high }}
-        </p>
 
         <details>
           <summary>How is the drawing tested?</summary>
