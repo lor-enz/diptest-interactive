@@ -42,6 +42,18 @@ server {
 }
 ```
 
+## Automatic builds and dependency updates
+
+**Docker image.** GitHub Actions (`.github/workflows/build.yml`) lints and builds the frontend, builds the image and smoke-tests the running container. Pull requests are only checked. Pushes to `main`, a weekly run (Mondays) and manual runs also push `nicepenguin/diptestinteractive:latest` and `:<commit>` to Docker Hub. The weekly run rebuilds from scratch, so base-image and Python security fixes arrive even without code changes. A server stays current if it regularly pulls `:latest` and recreates the container, e.g. with a daily `docker compose pull && docker compose up -d`.
+
+**Dependabot** (`.github/dependabot.yml`) opens grouped pull requests for npm and pip packages, base images and GitHub Actions: monthly, security fixes immediately.
+
+**Maintenance**
+- Merge Dependabot pull requests once their checks are green. Don't merge red ones; check the failing step first.
+- Major updates (e.g. chart.js, vue-chartjs) can pass CI and still break the charts. Click through the app before merging those.
+- Pushing needs the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. Renew the token before it expires.
+- Check now and then that the weekly Build run is green. A failing run means updates have stopped.
+
 ## Project setup for development
 
 There is a frontend and a backend. both in separate folders. 
