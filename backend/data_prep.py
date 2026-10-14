@@ -19,3 +19,13 @@ def quantile_samples_from_histo(histo, n):
     bars = np.searchsorted(cumulative, targets, side='right')
     mass_before = cumulative[bars] - heights[bars]
     return bars + (targets - mass_before) / heights[bars]
+
+
+def random_samples_from_histo(histo, n, rng):
+    """
+    Draws n points at random from the histogram read as a density, the way a real sample
+    of size n from that shape would come out. Returned sorted.
+    """
+    heights = np.asarray(histo, dtype=np.float64)
+    bars = rng.choice(len(heights), size=n, p=heights / heights.sum())
+    return np.sort(bars + rng.random(n))

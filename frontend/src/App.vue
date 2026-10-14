@@ -42,7 +42,9 @@ export default {
       dipResponse: 0, // dip value between 0 and 0.25
       low_high: "[]",
       modal_triangle: "[]",
-      pval: 0,
+      pval: 0, // p-value of the ideal sample
+      typicalPval: 0, // median p-value of random samples of n from the drawing
+      power: 0, // share of those random samples with p < 0.05
       result: null, // last successful response, drives the ECDF chart
     };
   },
@@ -178,6 +180,8 @@ export default {
           this.modal_triangle = data["modal_triangle"];
           this.low_high = data["low_high"];
           this.pval = Number(data["pval"]).toFixed(4);
+          this.typicalPval = Number(data["typical_pval"]).toFixed(4);
+          this.power = `${Math.round(100 * data["power"])} %`;
           this.result = {
             samples: data["samples"],
             xMax: this.cleanHistogramData.length,
@@ -197,6 +201,8 @@ export default {
     wrong() {
       this.dipResponse = "err";
       this.pval = "err";
+      this.typicalPval = "err";
+      this.power = "err";
       this.modal_triangle = "err";
       this.low_high = "err";
       this.result = null;
@@ -255,6 +261,8 @@ export default {
             <h3 class="centeredparagraph">
               Dip: {{ dipResponse }}  Pval: {{ pval }}
               <br />
+              Typical sample: Pval {{ typicalPval }} - significant in {{ power }}
+              <br />
               Modal Triangle 🟥 {{ modal_triangle }} - Low high 🟦 {{ low_high }}
             </h3>
             <p>
@@ -265,6 +273,13 @@ export default {
               </select>
               points placed exactly along that shape. The dip barely depends on this number,
               but the p-value does: the same shape is far more convincing with more points.
+            </p>
+            <p>
+              The ideal sample is perfectly smooth, so its p-value is not what a real sample
+              would get: real samples are noisy, which adds to their dip. For a faint dip the
+              difference is large. The <b>typical sample</b> line repeats the test on 100
+              random samples of the same size drawn from your shape. It shows their median
+              p-value and how often they reach p &lt; 0.05 (the test's power).
             </p>
           </div>
         </div>
