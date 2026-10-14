@@ -3,6 +3,7 @@
 #   major versions come as separate PRs (they may need code changes)
 # - security updates: opened as soon as an advisory is published, also grouped,
 #   so a batch of advisories means one PR instead of ten
+# - every PR is assigned to lor-enz, so it shows up as a phone notification
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
@@ -12,6 +13,7 @@ updates:
     directory: "/backend"
     schedule:
       interval: "monthly"
+    assignees: ["lor-enz"]
     groups:
       python-security:
         applies-to: security-updates
@@ -26,6 +28,7 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "monthly"
+    assignees: ["lor-enz"]
     groups:
       frontend-security:
         applies-to: security-updates
@@ -40,12 +43,14 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    assignees: ["lor-enz"]
 
   # GitHub Actions used in .github/workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+    assignees: ["lor-enz"]
     groups:
       actions:
         patterns: ["*"]
