@@ -47,7 +47,7 @@ server {
 There is a frontend and a backend. both in separate folders. 
 
 ### Frontend development
-The frontend is a node application that is created with Vue. You will find html, javascript, typescript and Vue specific code here.
+The frontend is a Vue 3 application built with [Vite](https://vite.dev). You will find html, javascript, typescript and Vue specific code here. It needs Node 22.12 or newer.
 Navigate to the frontend folder and use the familiar yarn commands. I guess you could also use _npm_, but that isn't tested.
 ```
 yarn install
@@ -56,10 +56,10 @@ yarn lint
 yarn serve
 ```
 
-```yarn serve``` uses the .env file as supplier for the API url. .env points to the local backend at http://localhost:5000/api
+```yarn serve``` starts the Vite dev server on http://localhost:8080 and uses the .env file as supplier for the API url. .env points to the local backend at http://localhost:5000/api
 
 
-```yarn serve-prod``` is a custom command, defined in package.json. There it overwrites the VUE_APP_API_URL environment variable before running yarn serve.
+```yarn serve-prod``` does the same, but takes the API url from .env.prodapi, which points at the live backend at https://diptool.lorenz.kiwi/api.
 
 
 ### Backend development
