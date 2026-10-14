@@ -62,18 +62,21 @@ export default {
       ctx.closePath();
     },
     keepDrawing(e) {
+      // the canvas is scaled to fit the window; work in its own 800x500 pixels
+      const offsetX = (e.offsetX * this.canv.width) / this.canv.clientWidth;
+      const offsetY = (e.offsetY * this.canv.height) / this.canv.clientHeight;
       // clear if starting on left
-      if (e.offsetX < startAreaSize) {
+      if (offsetX < startAreaSize) {
         this.clear();
       }
 
-      if (e.offsetX >= this.x) {
+      if (offsetX >= this.x) {
         var newX =
-          Math.round(e.offsetX / canvasLineInterval) * canvasLineInterval;
+          Math.round(offsetX / canvasLineInterval) * canvasLineInterval;
         var newY =
-          e.offsetY >= this.canv.height - zeroAreaSize
+          offsetY >= this.canv.height - zeroAreaSize
             ? randomIntFromInterval(this.canv.height - 4, this.canv.height)
-            : e.offsetY;
+            : Math.round(offsetY);
         this.drawLine(this.x, this.y, newX, newY);
         this.x = newX;
         this.y = newY;
@@ -238,19 +241,18 @@ export default {
 
 <template>
   <div id="app">
-    <h1>Diptest Tool</h1>
-    <div class="row">
-      <div class="column">
-        <h2 id="how-to-title">How to</h2>
-        <p>
-          📈 Move your mouse cursor from the left of the canvas to the right. <br />
-          ℹ️ No need to click! <br />
-          📊 Once the mourse cursor leaves the canvas area, the tool will convert the mouses trail into data for the charts on the right. <br>
-          <br>
-          The 🟨 yellow area is the start area. Touching it with your mouse will clear the canvas. <br>
-          The 🟥 red area is the random low value area. Drawing here will set random low value points.
-        </p>
-        <h2 id="canvas-title" >Canvas</h2>
+    <header>
+      <h1>Diptest Tool</h1>
+      <p class="howto">
+        📈 Move the mouse across the canvas from left to right, no click needed.
+        The test runs when the cursor leaves the canvas.
+        🟨 The start strip clears the canvas, 🟥 the bottom strip draws random low values.
+      </p>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Draw a density</h2>
         <canvas
           id="myCanvas"
           width="800"
@@ -259,160 +261,239 @@ export default {
           @mousedown="keepDrawing"
           @mouseleave="startCalculation"
         />
-        <div class="row">
-          <div class="column">
-            <h3 class="centeredparagraph">
-              Dip: {{ dipResponse }}  Pval: {{ pval }}
-              <br />
-              Typical sample: Pval {{ typicalPval }} - significant in {{ power }}
-              <br />
-              <template v-if="!dipAtFloor">
-                Modal Triangle 🟥 {{ modal_triangle }} - Low high 🟦 {{ low_high }}
-              </template>
-            </h3>
-            <p v-if="dipAtFloor">
-              The dip is 1/(2·{{ n }}), the smallest dip any {{ n }} points can have: half of
-              one step of the ECDF. As far as {{ n }} points can tell, your shape is unimodal.
-              Every step ties for the modal triangle, so neither it nor a modal interval is shown.
-            </p>
-            <p>
-              Your drawing is read as the <b>shape</b> of a distribution, not as counts.
-              The test runs on an ideal sample of
-              <select v-model.number="n">
-                <option v-for="size in sampleSizes" :key="size" :value="size">{{ size }}</option>
-              </select>
-              points placed exactly along that shape. The dip barely depends on this number
-              (it is within 1/(2n) of your shape's own dip, so only small n move it),
-              but the p-value does: the same shape is far more convincing with more points.
-            </p>
-            <p>
-              The ideal sample is perfectly smooth, so its p-value is not what a real sample
-              would get: real samples are noisy, which adds to their dip. For a faint dip the
-              difference is large. The <b>typical sample</b> line repeats the test on 100
-              random samples of the same size drawn from your shape. It shows their median
-              p-value and how often they reach p &lt; 0.05 (the test's power).
-            </p>
-          </div>
+
+        <div class="stats">
+          <div class="stat"><span class="label">Dip</span><span class="value">{{ dipResponse }}</span></div>
+          <div class="stat"><span class="label">p (ideal sample)</span><span class="value">{{ pval }}</span></div>
+          <div class="stat"><span class="label">p (typical sample)</span><span class="value">{{ typicalPval }}</span></div>
+          <div class="stat"><span class="label">significant in</span><span class="value">{{ power }}</span></div>
+          <label class="stat">
+            <span class="label">sample size n</span>
+            <select v-model.number="n">
+              <option v-for="size in sampleSizes" :key="size" :value="size">{{ size }}</option>
+            </select>
+          </label>
         </div>
-        <p id="footnote">Backend: [{{ backurl }}]</p>
-      </div>
-      <div class="column">
-        <div>
-          <BarChart :chartData="upperChartData" />
+        <p v-if="dipAtFloor" class="note">
+          The dip is 1/(2·{{ n }}), the smallest dip any {{ n }} points can have: half of
+          one step of the ECDF. As far as {{ n }} points can tell, your shape is unimodal.
+          Every step ties for the modal triangle, so neither it nor a modal interval is shown.
+        </p>
+        <p v-else class="note">
+          Modal triangle 🟥 {{ modal_triangle }} · Modal interval 🟦 {{ low_high }}
+        </p>
+
+        <details>
+          <summary>How is the drawing tested?</summary>
+          <p>
+            Your drawing is read as the <b>shape</b> of a distribution, not as counts.
+            The test runs on an ideal sample of n points placed exactly along that shape.
+            The dip barely depends on n (it is within 1/(2n) of your shape's own dip, so
+            only small n move it), but the p-value does: the same shape is far more
+            convincing with more points.
+          </p>
+        </details>
+        <details>
+          <summary>Why two p-values?</summary>
+          <p>
+            The ideal sample is perfectly smooth, so its p-value is not what a real sample
+            would get: real samples are noisy, which adds to their dip. For a faint dip the
+            difference is large. The <b>typical sample</b> p-value repeats the test on 100
+            random samples of the same size drawn from your shape. It is their median, and
+            "significant in" is how often they reach p &lt; 0.05 (the test's power).
+          </p>
+        </details>
+        <details>
+          <summary>The race track</summary>
+          <p>
+            The track's walls run at the ECDF ± a half-width. A racing line takes the
+            shortest way through. Turning left means the distribution is getting denser,
+            turning right means it is thinning out, so each 🏎️ marks a place where the line
+            stops turning left and starts turning right: a mode. The <b>dip is half the
+            width of the narrowest track whose racing line switches from left to right only
+            once.</b> Make the track narrower than that and the line needs more switches.
+          </p>
+        </details>
+      </section>
+
+      <section class="panel">
+        <h2>Histogram</h2>
+        <div class="histogram">
+          <BarChart :chartData="upperChartData" :styles="{ height: '100%', position: 'relative' }" />
         </div>
-        <h3>⬆️        Histogram        ⬆️</h3>
-        <h3>⬇️ Empirical Cumulative Distribution (ECDF) ⬇️</h3>
-        <div v-if="result">
+
+        <h2>Empirical cumulative distribution (ECDF)</h2>
+        <template v-if="result">
           <EcdfChart
             v-bind="result"
             :trackFactor="trackFactor"
             @modes="racingLineModes = $event"
           />
           <p class="legend">
-            <span class="swatch ecdf"></span> ECDF of the sample
-            <span class="swatch interval"></span> modal interval (low, high)
-            <span class="swatch triangle"></span> modal triangle: the dashed gap is 2·dip
-            <span class="swatch track"></span> race track: ECDF ± half-width
-            <span class="swatch line"></span> racing line
-          </p>
-          <p>
-            <b>The race track.</b> The track's walls run at the ECDF ± a half-width.
-            A racing line takes the shortest way through. Turning left means the
-            distribution is getting denser, turning right means it is thinning out, so each
-            🏎️ marks a place where the line stops turning left and starts turning right: a mode.
-            The <b>dip is half the width of the narrowest track whose racing line switches from
-            left to right only once.</b> Make the track narrower than that and the line needs
-            more switches.
+            <span><span class="swatch ecdf"></span>ECDF of the sample</span>
+            <span><span class="swatch interval"></span>modal interval</span>
+            <span><span class="swatch triangle"></span>modal triangle (gap = 2·dip)</span>
+            <span><span class="swatch track"></span>race track: ECDF ± half-width</span>
+            <span><span class="swatch line"></span>racing line</span>
           </p>
           <label class="track-slider">
-            Track half-width: {{ trackFactor.toFixed(2) }} × dip
+            <span>Track half-width {{ trackFactor.toFixed(2) }} × dip</span>
             <input v-model.number="trackFactor" type="range" min="0.25" max="2" step="0.01" />
+            <span v-if="racingLineModes">
+              = {{ racingLineModes.halfWidth.toFixed(4) }}:
+              <b>{{ racingLineModes.count }}</b>
+              mode{{ racingLineModes.count === 1 ? "" : "s" }}
+            </span>
           </label>
-          <p v-if="racingLineModes" class="centeredparagraph">
-            Half-width {{ racingLineModes.halfWidth.toFixed(4) }}:
-            the racing line has <b>{{ racingLineModes.count }}</b>
-            mode{{ racingLineModes.count === 1 ? "" : "s" }}.
-          </p>
-        </div>
-        <p v-else class="centeredparagraph">Draw something in the canvas to see its ECDF.</p>
-      </div>
-    </div>
-    <p></p>
+        </template>
+        <p v-else class="placeholder">Draw something in the canvas to see its ECDF.</p>
+      </section>
+    </main>
+
+    <p id="footnote">Backend: [{{ backurl }}]</p>
   </div>
 </template>
 
 <style scoped>
+/* Fit the drawing and the results into one screen. The canvas and the ECDF chart scale
+   with the window height, since both have a fixed aspect ratio (8:5). */
+#app {
+  --ink: #383838;
+  --muted: #666;
+  --line: #ddd;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 16px;
+  font-family: verdana, sans-serif;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  padding: 10px 0 6px;
+}
+
 h1 {
-  font-family: verdana;
-  color: #383838;
-  text-align: center;
+  margin: 0;
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.howto {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
 }
 
 h2 {
-  font-family: verdana;
-  color: #383838;
-  text-align: center;
-  margin: 15px;
-}
-
-h3 {
-  font-family: verdana;
-  color: #383838;
-  text-align: center;
-}
-
-div {
-  text-align: center;
-}
-
-p {
-  font-family: verdana;
+  margin: 4px 0 6px;
   font-size: 15px;
-  text-align: left;
 }
 
-.row {
-  display: flex;
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
 }
 
-.column {
-  flex: 50%;
+.panel {
+  min-width: 0;
 }
 
 #myCanvas {
+  display: block;
+  width: 100%;
+  max-width: calc((100vh - 200px) * 1.6);
+  height: auto;
   border: 1px solid grey;
+  box-sizing: border-box;
+  touch-action: none;
 }
 
-#footnote {
+.stats {
   display: flex;
-  font-size: 7px;
-  color: #b5b5b5;
-  text-indent: 0px;
-  margin: 1px;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 6px;
 }
 
-#how-to-title {
-  margin: 1px;
+.stat {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-width: 90px;
 }
 
-#canvas-title {
-  margin: 20px;
+.stat .label {
+  font-size: 11px;
+  color: var(--muted);
 }
 
-.centeredparagraph {
+.stat .value,
+.stat select {
+  font-size: 17px;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+details {
+  font-size: 13px;
+  border-top: 1px solid var(--line);
+  padding: 4px 0;
+}
+
+details p {
+  margin: 4px 0 6px;
+  line-height: 1.45;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.histogram {
+  height: clamp(110px, 18vh, 200px);
+}
+
+.panel :deep(.ecdf-chart) {
+  display: block;
+  margin: 0 auto;
+  max-width: calc((100vh - 400px) * 1.6);
+}
+
+.placeholder {
+  color: var(--muted);
   text-align: center;
+  padding: 60px 0;
 }
 
 .legend {
-  font-size: 12px;
-  line-height: 1.8;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 14px;
+  margin: 4px 0;
+  font-size: 11px;
 }
 
 .swatch {
   display: inline-block;
   width: 14px;
   height: 10px;
-  margin: 0 3px 0 10px;
+  margin-right: 4px;
   vertical-align: middle;
 }
 .swatch.ecdf { background: #383838; height: 2px; }
@@ -422,13 +503,36 @@ p {
 .swatch.line { background: rgb(230, 159, 0); height: 3px; }
 
 .track-slider {
-  display: block;
-  font-family: verdana;
-  font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 10px;
+  font-size: 13px;
 }
 
 .track-slider input {
-  width: 60%;
-  vertical-align: middle;
+  flex: 1 1 200px;
+  max-width: 320px;
+}
+
+#footnote {
+  font-size: 7px;
+  color: #b5b5b5;
+  margin: 8px 0 4px;
+}
+
+@media (max-width: 900px) {
+  header {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  #myCanvas,
+  .panel :deep(.ecdf-chart) {
+    max-width: 100%;
+  }
 }
 </style>
