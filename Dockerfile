@@ -4,6 +4,10 @@
 FROM node:26-alpine AS frontend
 WORKDIR /frontend
 
+# Node images no longer bundle Yarn v1 (since Node 26), so install it explicitly.
+# Pinned to the version that wrote yarn.lock.
+RUN npm install --global yarn@1.22.22
+
 # API location, baked in at build time. Relative, because the backend serves
 # the frontend and the API (under /api) from the same origin.
 ARG VUE_APP_API_URL=/api
