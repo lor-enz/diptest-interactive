@@ -1,6 +1,6 @@
 <script>
 import BarChart from "./components/barChart.ts";
-import LineChart from "./components/lineChart.ts";
+import EcdfChart from "./components/EcdfChart.vue";
 const startAreaSize = 7;
 const zeroAreaSize = 20;
 const canvasLineInterval = 17;
@@ -17,7 +17,7 @@ export default {
   name: "DipTestApp",
   components: {
     BarChart,
-    LineChart,
+    EcdfChart,
   },
   data() {
     return {
@@ -30,31 +30,20 @@ export default {
           },
         ],
       },
-      lowerChartData: {
-        labels: ["Draw", "something", "in", "the", "Canvas"],
-        datasets: [
-          {
-            data: [400, 600, 700, 750, 775],
-            backgroundColor: ["rgba(136, 149, 66, 1.0)"],
-          },
-        ],
-      },
       backurl:
         "the api url. Filled with VUE_APP_API_URL environment variable during BUILD, not RUNTIME",
       canvas: null,
       cleanHistogramData: [],
-      cleanCumulativeData: [],
       points: [1,2,3], // pixelcoordinates of drawn line start/endpoints
+      sampleSizes: [20, 50, 100, 200, 500, 1000, 5000],
+      n: 200, // size of the ideal sample the dip test runs on
+      trackFactor: 1, // race track half-width in units of the dip
+      racingLineModes: null, // { count, halfWidth } reported by the ECDF chart
       dipResponse: 0, // dip value between 0 and 0.25
-      howUnimodalInPercent: 0,
-      split_index: 0,
-      pval_left: 0,
-      pval_right: 0,
-      score: 0,
       low_high: "[]",
       modal_triangle: "[]",
       pval: 0,
-      ecdf: [],
+      result: null, // last successful response, drives the ECDF chart
     };
   },
 
@@ -139,62 +128,25 @@ export default {
       this.requestDipValue();
     },
     createDataLists() {
-      // Histogramdata
-      var cleanHistogramData = [];
-      this.points.forEach(function (element, index) {
-        let [x1, y1] = element;
-        cleanHistogramData.push(y1);
-      });
-
-      // Actual CDF (cumulative distribution funciton)
-      var cleanCumulativeData = [];
-      var totalsum = 0;
-      cleanHistogramData.forEach(function (value, index) {
-        totalsum = totalsum + value;
-      });
-      var sum = 0;
-      cleanHistogramData.forEach(function (value, index) {
-        sum = sum + value;
-        cleanCumulativeData.push(sum / totalsum);
-      });
-      this.cleanHistogramData = cleanHistogramData;
-      this.cleanCumulativeData = cleanCumulativeData;
+      // one bar per drawn column, its height in pixels; only the shape matters
+      this.cleanHistogramData = this.points.map(([x, y]) => y);
     },
     createChartData() {
-      // Data
       this.upperChartData.datasets[0].data = this.cleanHistogramData;
-      this.lowerChartData.datasets[0].data = this.cleanCumulativeData;
-      // Labels
-      var labels = [...Array(this.cleanHistogramData.length).keys()];
-      labels[this.split_index] = "]";
-      labels[this.split_index + 1] = "[";
-      this.upperChartData.labels = labels;
-      this.lowerChartData.labels = labels;
-      // Bar Colors
-      var barColors = [];
+      this.upperChartData.labels = [...Array(this.cleanHistogramData.length).keys()];
+      // Bar Colors: modal interval blue, bars holding the modal triangle's corners red
       var lightgreen = "rgb(136, 149, 66)";
-      var kiwigreen = "rgb(201, 219, 96)";
       var red = "rgb(227, 98, 128)";
       var blue = "rgb(56, 182, 217)";
-      var purple = "rgb(142,140,173)";
-
-      var split_index = this.split_index;
-      this.cleanHistogramData.forEach(function (value, index) {
-        if (index <= split_index) barColors.push(kiwigreen);
-        else barColors.push(lightgreen);
-      });
-      barColors[this.low_high[0]] = blue;
-      barColors[this.low_high[1]] = blue;
-      barColors[this.modal_triangle[0]] = red;
-      barColors[this.modal_triangle[1]] = red;
-      barColors[this.modal_triangle[2]] = red;
-      this.low_high.forEach((element) => {
-        if (this.modal_triangle.includes(element)) {
-          barColors[element] = purple;
+      var barColors = this.cleanHistogramData.map(() => lightgreen);
+      if (Array.isArray(this.low_high)) {
+        for (let bar = this.low_high[0]; bar <= this.low_high[1]; bar++) {
+          barColors[bar] = blue;
         }
-      });
-
-      this.lowerChartData.datasets[0].backgroundColor = barColors;
+      }
+      if (Array.isArray(this.modal_triangle)) {
+        this.modal_triangle.forEach((bar) => (barColors[bar] = red));
+      }
       this.upperChartData.datasets[0].backgroundColor = barColors;
     },
     copy() {
@@ -202,7 +154,7 @@ export default {
       document.execCommand("copy");
     },
     async requestDipValue() {
-      if (this.cleanCumulativeData.length < 6) {
+      if (this.cleanHistogramData.length < 6) {
         this.wrong();
         return;
       }
@@ -211,30 +163,29 @@ export default {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(this.cleanHistogramData),
       };
-      var req_url = `${this.backurl}/dip-from-histo`;
+      var req_url = `${this.backurl}/dip-from-histo?n=${this.n}`;
       console.log(
         `fetching from: ${req_url} with method: ${requestOptions["method"]} `
       );
       fetch(req_url, requestOptions)
         .then((response) => {
           console.log("Response:", response);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return response.json();
         })
         .then((data) => {
-          // console.log("...with data:", data);
-          this.dipResponse = Number(data["dip"]).toFixed(3);
-          this.howUnimodalInPercent = this.howUnimodalInPercent = Math.round(
-            (1 - this.dipResponse * 4) * 100
-          );
+          this.dipResponse = Number(data["dip"]).toFixed(4);
           this.modal_triangle = data["modal_triangle"];
           this.low_high = data["low_high"];
-          this.split_index = data["split_index"];
-          this.pval_left = Number(data["dip_left"]).toFixed(4);
-          this.pval_right = Number(data["dip_right"]).toFixed(4);
           this.pval = Number(data["pval"]).toFixed(4);
-          this.ecdf = data["ecdf"];
-
-          this.score = Number(data["score"]).toFixed(2);
+          this.result = {
+            samples: data["samples"],
+            xMax: this.cleanHistogramData.length,
+            dip: data["dip"],
+            lowHighIndex: data["low_high_index"],
+            triangleIndex: data["modal_triangle_index"],
+            triangleSide: data["modal_triangle_side"],
+          };
           this.createChartData();
         })
         .catch((err) => {
@@ -245,13 +196,17 @@ export default {
     },
     wrong() {
       this.dipResponse = "err";
-      this.howUnimodalInPercent = "err";
+      this.pval = "err";
       this.modal_triangle = "err";
       this.low_high = "err";
-      this.split_index = "err";
-      this.pval_left = "err";
-      this.pval_right = "err";
-      this.score = "err";
+      this.result = null;
+    },
+  },
+
+  watch: {
+    n() {
+      // the dip and p-value depend on the sample size; the drawing stays the same
+      if (this.cleanHistogramData.length) this.requestDipValue();
     },
   },
 
@@ -298,10 +253,19 @@ export default {
         <div class="row">
           <div class="column">
             <h3 class="centeredparagraph">
-              Dip: {{ dipResponse }} (or {{howUnimodalInPercent}}%)  Pval: {{ pval }}
+              Dip: {{ dipResponse }}  Pval: {{ pval }}
               <br />
               Modal Triangle 🟥 {{ modal_triangle }} - Low high 🟦 {{ low_high }}
             </h3>
+            <p>
+              Your drawing is read as the <b>shape</b> of a distribution, not as counts.
+              The test runs on an ideal sample of
+              <select v-model.number="n">
+                <option v-for="size in sampleSizes" :key="size" :value="size">{{ size }}</option>
+              </select>
+              points placed exactly along that shape. The dip barely depends on this number,
+              but the p-value does: the same shape is far more convincing with more points.
+            </p>
           </div>
         </div>
         <p id="footnote">Backend: [{{ backurl }}]</p>
@@ -310,16 +274,41 @@ export default {
         <div>
           <BarChart :chartData="upperChartData" />
         </div>
-        <!-- <h3>
-          Split at: {{ split_index }}, pval_left: {{ pval_left }}, pval_right:
-          {{ pval_right }}
-        </h3>
-        <h3>Score (lower is better): {{ this.score }}</h3> -->
         <h3>⬆️        Histogram        ⬆️</h3>
-        <h3>⬇️ Cumulative Distribution ⬇️</h3>
-        <div>
-          <LineChart :chartData="lowerChartData" />
+        <h3>⬇️ Empirical Cumulative Distribution (ECDF) ⬇️</h3>
+        <div v-if="result">
+          <EcdfChart
+            v-bind="result"
+            :trackFactor="trackFactor"
+            @modes="racingLineModes = $event"
+          />
+          <p class="legend">
+            <span class="swatch ecdf"></span> ECDF of the sample
+            <span class="swatch interval"></span> modal interval (low, high)
+            <span class="swatch triangle"></span> modal triangle: the dashed gap is 2·dip
+            <span class="swatch track"></span> race track: ECDF ± half-width
+            <span class="swatch line"></span> racing line
+          </p>
+          <p>
+            <b>The race track.</b> The track's walls run at the ECDF ± a half-width.
+            A racing line takes the shortest way through. Turning left means the
+            distribution is getting denser, turning right means it is thinning out, so each
+            🏎️ marks a place where the line stops turning left and starts turning right: a mode.
+            The <b>dip is half the width of the narrowest track whose racing line switches from
+            left to right only once.</b> Make the track narrower than that and the line needs
+            more switches.
+          </p>
+          <label class="track-slider">
+            Track half-width: {{ trackFactor.toFixed(2) }} × dip
+            <input v-model.number="trackFactor" type="range" min="0.25" max="2" step="0.01" />
+          </label>
+          <p v-if="racingLineModes" class="centeredparagraph">
+            Half-width {{ racingLineModes.halfWidth.toFixed(4) }}:
+            the racing line has <b>{{ racingLineModes.count }}</b>
+            mode{{ racingLineModes.count === 1 ? "" : "s" }}.
+          </p>
         </div>
+        <p v-else class="centeredparagraph">Draw something in the canvas to see its ECDF.</p>
       </div>
     </div>
     <p></p>
@@ -386,5 +375,34 @@ p {
 
 .centeredparagraph {
   text-align: center;
+}
+
+.legend {
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  margin: 0 3px 0 10px;
+  vertical-align: middle;
+}
+.swatch.ecdf { background: #383838; height: 2px; }
+.swatch.interval { background: rgba(56, 182, 217, 0.5); border: 1px solid rgb(56, 182, 217); }
+.swatch.triangle { background: rgba(227, 98, 128, 0.35); border: 1px solid rgb(200, 50, 90); }
+.swatch.track { background: rgba(80, 80, 80, 0.3); border-top: 2px dashed #555; border-bottom: 2px dashed #555; }
+.swatch.line { background: rgb(230, 159, 0); height: 3px; }
+
+.track-slider {
+  display: block;
+  font-family: verdana;
+  font-size: 14px;
+}
+
+.track-slider input {
+  width: 60%;
+  vertical-align: middle;
 }
 </style>

@@ -91,12 +91,26 @@ def dip_from_histo():
     bar_of = lambda index: int(samples[index]) if index is not None else None
     mod_tri = [bar_of(index) for index in modal_triangle] if modal_triangle else None
     lo_hi = [bar_of(index) for index in low_high]
+    # The dip is attained left of the modal interval (on the greatest convex minorant)
+    # or right of it (on the least concave majorant); the ECDF chart draws it accordingly.
+    if modal_triangle and modal_triangle[1] is not None:
+        triangle_index = [int(index) for index in modal_triangle]
+        triangle_side = "left" if triangle_index[2] <= low_high[0] else "right"
+    else:
+        triangle_index, triangle_side = None, None
 
     json_response = {"dip": dip_value,
                      "pval": pval,
                      "n": n,
                      "low_high": lo_hi,
                      "modal_triangle": mod_tri,
+                     # sample positions and indices into them, for drawing the ECDF
+                     # full precision: within a bar the points are evenly spaced, and rounding
+                     # would bend the racing line where it should run straight
+                     "samples": samples.tolist(),
+                     "low_high_index": [int(index) for index in low_high],
+                     "modal_triangle_index": triangle_index,
+                     "modal_triangle_side": triangle_side,
                      }
     return jsonify(json_response)
 
