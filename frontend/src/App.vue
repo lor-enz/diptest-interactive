@@ -281,7 +281,8 @@ export default {
               <select v-model.number="n">
                 <option v-for="size in sampleSizes" :key="size" :value="size">{{ size }}</option>
               </select>
-              points placed exactly along that shape. The dip barely depends on this number,
+              points placed exactly along that shape. The dip barely depends on this number
+              (it is within 1/(2n) of your shape's own dip, so only small n move it),
               but the p-value does: the same shape is far more convincing with more points.
             </p>
             <p>
